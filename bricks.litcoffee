@@ -5,10 +5,10 @@ Dear Stewart
 Thanks for inspiring me and many like me with the wonders of js.
 With all it's warts and issues, JS is still one of my favorite languages.
 I think simply by it's virtue of being the language of the web, it surpasses most others
-in it's ability to champion the spirit of openness and the creative.
+in it's ability to champion the spirit of openness.
 
 I have tried to keep this as simple as possible for the many awesome source code lovers
-to read, copy-paste and critique.
+to read, reuse and critique.
 
 Thanks again for caring to write that letter in 2009. It made a kid smile.
 
@@ -145,6 +145,8 @@ All the objects will inherit from this class.
       _get: (prop) -> @_settings[prop] if prop in @_EDITABLE
       _getAll: -> _.clone @_settings
 
+      _getDefaults: -> Box::_settings
+
       # -- Public --
 
       # Show window with settings.
@@ -167,26 +169,26 @@ All the objects will inherit from this class.
 
       # Reset window settings.
       reset: ->
-        @_update Box::settings
+        @_update @_getDefaults()
         this
 
       # Return or update window position coords.
       position: (coords...) ->
         # Set new coords
         if coords.length then @_update
-          left: coords[0] ? Box::settings.left  # x
-          top:  coords[1] ? Box::settings.top   # y
+          left: coords[0] ? @_getDefaults().left  # x
+          top:  coords[1] ? @_getDefaults().top   # y
 
         # Return coords
-        [(@_get 'left'), (@_get 'top')]
+        _.pick @_getAll(), ['top', 'left']
 
       # Return or update window dimensions.
       size: (dimensions...) ->
         # Set new dimensions
         if dimensions.length then @_update
-          width: dimensions[0] ? Box::settings.width
-          height:  dimensions[1] ? Box::settings.height
+          width:  dimensions[0] ? @_getDefaults().width
+          height: dimensions[1] ? @_getDefaults().height
 
         # Return dimensions
-        [(@_get 'width'), (@_get 'height')]
+        _.pick @_getAll(), ['width', 'height']
 
