@@ -21,14 +21,17 @@ Browser Bricks
 ==============
 
 Alright, let's get on with it.
-First, let's define some helper functions for the application.
 
 Helper Functions
 ----------------
 
+First, let's define some helper functions for the application.
+
     @_ = _ =   # _ namespace
       # Extend objects
-      extend: (dest, src) -> dest[k] = v for own k, v of src
+      extend: (dest, src) ->
+        dest[k] = v for own k, v of src
+        dest
 
       # Pick properties
       pick: (obj, props) ->
@@ -53,11 +56,49 @@ Helper Functions
         # Return serialized obj
         ("#{ k }#{ eq }#{ v }" for own k, v of obj).join sep
 
-Now, let's define a box that will be the basic building block for the game.
-All the objects will inherit from this class.
+      # Defer execution of function
+      defer: (fn, args...) -> window.setTimeout fn, 1, args...
+
+      # Clone object
+      clone: (obj) -> _.extend {}, obj
+
+Init Function
+-------------
+
+Let's write a global init function that can be used to register callbacks which are
+executed 'onload'.
+
+    # Callback register
+    @init = init = do ->
+      # Store registered callbacks
+      callbacks = []
+
+      # Run callbacks in order registered
+      exec = -> fn?() for fn in callbacks
+
+      # Onload callback
+      onLoad = (fn) ->
+        window.removeEventListener 'load', init, false
+        fn?()
+
+      (cb) ->
+        if cb?
+          # Register callback
+          callbacks.push cb
+        else
+          # Defer execution until stack cleared
+          onLoad -> _.defer exec
+
+        false
+
+    # Attach DOM load listener
+    window.addEventListener 'load', init, false
 
 Class: Box
 ----------
+
+Now, let's define a box that will be the basic building block for the game.
+All the objects will inherit from this class.
 
     class Box
       _EDITABLE: ['height', 'width', 'top', 'left']   # Editable settings
@@ -80,7 +121,7 @@ Class: Box
 
       _window: null  # Empty window object
 
-      initialize: (@url, settings) ->
+      constructor: (@url, settings) ->
         # Override settings.
         @_update settings
 
@@ -89,9 +130,10 @@ Class: Box
         this
 
       # -- Private --
+
       _update: (settings) -> _.extend @_settings, (_.pick settings, @_EDITABLE)
       _get: (prop) -> @_settings[prop] if prop in @_EDITABLE
-      _getAll: -> _.pick @_settings, @_EDITABLE
+      _getAll: -> _.clone @_settings
 
       # -- Public --
 
