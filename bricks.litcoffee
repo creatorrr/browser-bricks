@@ -131,7 +131,17 @@ All the objects will inherit from this class.
 
       # -- Private --
 
-      _update: (settings) -> _.extend @_settings, (_.pick settings, @_EDITABLE)
+      _update: (settings) ->
+        # Update settings
+        _.extend @_settings, (_.pick settings, @_EDITABLE)
+
+        # Adjust window props
+        @_window?.moveTo (@_get 'left'), (@_get 'top')
+        @_window?.resizeTo (@_get 'width'), (@_get 'height')
+
+        # Return a copy of settings
+        @_getAll()
+
       _get: (prop) -> @_settings[prop] if prop in @_EDITABLE
       _getAll: -> _.clone @_settings
 
@@ -161,12 +171,22 @@ All the objects will inherit from this class.
         this
 
       # Return or update window position coords.
-      position: (coords) ->
+      position: (coords...) ->
         # Set new coords
-        if coords? then @_update
+        if coords.length then @_update
           left: coords[0] ? Box::settings.left  # x
           top:  coords[1] ? Box::settings.top   # y
 
         # Return coords
         [(@_get 'left'), (@_get 'top')]
+
+      # Return or update window dimensions.
+      size: (dimensions...) ->
+        # Set new dimensions
+        if dimensions.length then @_update
+          width: dimensions[0] ? Box::settings.width
+          height:  dimensions[1] ? Box::settings.height
+
+        # Return dimensions
+        [(@_get 'width'), (@_get 'height')]
 
