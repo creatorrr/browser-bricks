@@ -27,7 +27,7 @@ Helper Functions
 
 First, let's define some helper functions for the application.
 
-    @_ = _ =   # _ namespace
+    _ =   # _ namespace
       # Extend objects
       extend: (dest, src) ->
         dest[k] = v for own k, v of src
@@ -60,7 +60,13 @@ First, let's define some helper functions for the application.
       defer: (fn, args...) -> window.setTimeout fn, 1, args...
 
       # Clone object
-      clone: (obj) -> _.extend {}, obj
+      clone: (obj) ->
+        # If object extend
+        if obj is Object obj
+          _.extend {}, obj
+
+        else  # Assume it's array otherwise
+          obj.splice 0
 
 Init Function
 -------------
@@ -69,7 +75,7 @@ Let's write a global init function that can be used to register callbacks which 
 executed 'onload'.
 
     # Callback register
-    @init = init = do ->
+    init = do ->
       # Store registered callbacks
       callbacks = []
 
@@ -101,7 +107,8 @@ Now, let's define a box that will be the basic building block for the game.
 All the objects will inherit from this class.
 
     class Box
-      _EDITABLE: ['height', 'width', 'top', 'left']   # Editable settings
+      # -- Private --
+
       _settings:
         # Default settings
         height: 100
@@ -109,7 +116,8 @@ All the objects will inherit from this class.
         top:    0
         left:   0
 
-        # Fixed props
+      _props:
+        # Fixed window props
         toolbar:     false
         directories: false
         fullscreen:  false
@@ -120,34 +128,38 @@ All the objects will inherit from this class.
         status:      false
 
       _window: null  # Empty window object
+      _url: '/index.html' # Fixed to current page, renders based on context
 
-      constructor: (@url, settings) ->
-        # Override settings.
-        @_update settings
-
-        # Set random name
-        @id = _.uuid()
-        this
-
-      # -- Private --
+      _EDITABLE: -> Object.keys @constructor::_settings   # Editable settings
 
       _update: (settings) ->
         # Update settings
-        _.extend @_settings, (_.pick settings, @_EDITABLE)
+        _.extend @_settings, (_.pick settings, @_EDITABLE())
 
         # Adjust window props
-        @_window?.moveTo (@_get 'left'), (@_get 'top')
-        @_window?.resizeTo (@_get 'width'), (@_get 'height')
+        @_window?.moveTo?   (@_get 'left'), (@_get 'top')
+        @_window?.resizeTo? (@_get 'width'), (@_get 'height')
 
         # Return a copy of settings
         @_getAll()
 
-      _get: (prop) -> @_settings[prop] if prop in @_EDITABLE
-      _getAll: -> _.clone @_settings
+      _get: (prop) -> @_settings[prop] if prop in @_EDITABLE()
+      _getAll: -> _.extend (_.clone @_settings), @_fixed
 
-      _getDefaults: -> Box::_settings
+      _getDefault: -> @constructor::_settings
 
       # -- Public --
+
+      constructor: (namespace='', settings) ->
+        # Make a copy of default settings
+        @_settings = _.clone @_settings
+
+        # Override settings.
+        @_update settings
+
+        # Set random name with namespace
+        @id = "#{ namespace }#{ if namespace then '-' else '' }#{ _.uuid() }"
+        this
 
       # Show window with settings.
       show: ->
@@ -158,7 +170,7 @@ All the objects will inherit from this class.
             when true then 'yes'
             else v+''
 
-        @_window = window.open @url, @id, opts
+        @_window = window.open @_url, @id, opts
         this
 
       # Hide the window.
@@ -169,15 +181,15 @@ All the objects will inherit from this class.
 
       # Reset window settings.
       reset: ->
-        @_update @_getDefaults()
+        @_update @_getDefault()
         this
 
       # Return or update window position coords.
       position: (coords...) ->
         # Set new coords
         if coords.length then @_update
-          left: coords[0] ? @_getDefaults().left  # x
-          top:  coords[1] ? @_getDefaults().top   # y
+          left: coords[0] ? @_getDefault().left  # x
+          top:  coords[1] ? @_getDefault().top   # y
 
         # Return coords
         _.pick @_getAll(), ['top', 'left']
@@ -186,9 +198,86 @@ All the objects will inherit from this class.
       size: (dimensions...) ->
         # Set new dimensions
         if dimensions.length then @_update
-          width:  dimensions[0] ? @_getDefaults().width
-          height: dimensions[1] ? @_getDefaults().height
+          width:  dimensions[0] ? @_getDefault().width
+          height: dimensions[1] ? @_getDefault().height
 
         # Return dimensions
         _.pick @_getAll(), ['width', 'height']
 
+Class: Brick (Box)
+------------------
+
+Now let's use the class `Box` to design the `Brick` class which
+will be used to render the bricks.
+
+It's pretty much a useless box.
+
+    class Brick extends Box
+      constructor: (args...) -> super @type(), args...
+      type: -> 'brick'
+
+Class: Ball (Box)
+-----------------
+
+Alright, so the ball is a little tricky. It has to move two-
+dimensionally and bounce off of objects.
+
+So, we need an instance that also stores it's velocity at any
+instant and the methods to manipulate it.
+
+    class Ball extends Box
+      # -- Private --
+      _velocity: [0, 0]
+
+      # Override getDefault to get default velocity
+      _getDefault: -> _.extend super(), velocity: _.clone @_velocity
+
+      # -- Public --
+      constructor: (args...) ->
+        @_velocity = _.clone @_velocity
+        super @type(), args...
+
+      type: -> 'ball'
+
+      # Set or retrieve velocity
+      velocity: (vel...) ->
+        # Set new velocity
+        if vel.length then @_velocity = [
+          vel[0] ? @_getDefault().velocity[0]         # vx
+
+          # y velocity affects distance from top so inverted to preserve
+          # upward positive velocity direction.
+          (vel[1] ? @_getDefault().velocity[1]) * -1  # vy
+        ]
+
+        # Return velocity
+        _.clone @_velocity
+
+Class: Paddle (Ball)
+--------------------
+
+A paddle is basically an enlarged ball that's constrained to move in a
+straight line.
+
+    class Paddle extends Ball
+      type: -> 'paddle'
+
+      # Override velocity to constrain 1D motion
+      velocity: (vx) ->
+        if vx?
+          super vx, @_velocity[1]
+        else
+          super()
+
+Exports
+-------
+
+List of vars exported to global namespace.
+
+    _.extend window ? module.exports ? this,
+      _: _
+      init: init
+      Box: Box
+      Brick: Brick
+      Ball: Ball
+      Paddle: Paddle
