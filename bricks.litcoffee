@@ -256,6 +256,9 @@ instant and the methods to manipulate it.
         # Return velocity
         _.clone @_velocity
 
+      # Invert velocity
+      bounce: -> @velocity (@_velocity[0] * -1), (@_velocity[1] * -1)
+
 Class: Paddle (Ball)
 --------------------
 
