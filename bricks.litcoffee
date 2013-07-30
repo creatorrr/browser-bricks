@@ -179,6 +179,9 @@ All the objects will inherit from this class.
         @_window = null
         this
 
+      # Check if window is visible.
+      isVisible: -> @_window?.location?
+
       # Reset window settings.
       reset: ->
         @_update @_getDefault()
