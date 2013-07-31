@@ -68,6 +68,14 @@ First, let's define some helper functions for the application.
         else  # Assume it's array otherwise
           obj.splice 0
 
+      # Negate function
+      negate: (fn) ->
+        (args...) -> not fn args...
+
+      # Return first and last of array
+      first: (array) -> array[0]
+      last: (array) -> array[array.length-1]
+
 Init Function
 -------------
 
@@ -150,7 +158,7 @@ All the objects will inherit from this class.
 
       # -- Public --
 
-      constructor: (namespace='', settings) ->
+      constructor: (namespace='', settings={}) ->
         # Make a copy of default settings
         @_settings = _.clone @_settings
 
@@ -170,17 +178,20 @@ All the objects will inherit from this class.
             when true then 'yes'
             else v+''
 
-        @_window = window.open @_url, @id, opts
+        @_window ?= window.open @_url, @id, opts
         this
 
       # Hide the window.
       hide: ->
-        @_window.close()
+        @_window?.close()
         @_window = null
         this
 
       # Check if window is visible.
       isVisible: -> @_window?.location?
+
+      # Check for equality
+      equals: (box) -> box.id is @id
 
       # Reset window settings.
       reset: ->
@@ -233,7 +244,7 @@ instant and the methods to manipulate it.
       _velocity: [0, 0]
 
       # Override getDefault to get default velocity
-      _getDefault: -> _.extend super(), velocity: _.clone @_velocity
+      _getDefault: -> _.extend {velocity: @_velocity}, super()
 
       # -- Public --
       constructor: (args...) ->
@@ -275,6 +286,78 @@ straight line.
         else
           super()
 
+Class: Screen
+-------------
+
+This class is supposed to keep track of screen dimensions, offsets etc.
+
+    class Screen
+      # -- Private --
+      _screen: window.screen
+      _offset: [0, 0]
+      _getDefault: -> offset: @constructor::_offset
+
+      # -- Public --
+      constructor: ->
+        # Copy offset
+        @_offset = _.clone @_offset
+        this
+
+      # Get available screen coordinates
+      height: -> @_screen.availHeight - 2*@offset()[1]
+      width: -> @_screen.availWidth - 2*@offset()[0]
+      top: -> @offset()[1]
+      left: -> @offset()[0]
+
+      # Set or retrieve offset
+      offset: (args...) ->
+        if args.length then @_offset = [
+          args[0] ? @_getDefault().offset[0]  # offsetX
+          args[1] ? @_getDefault().offset[1]  # offsetY
+        ]
+
+        # Return offset
+        _.clone @_offset
+
+Class: Bricks
+-------------
+
+Collection of `Brick` instances that organizes itself.
+It also ascertains whether the `Ball` is touching a `Brick`.
+
+    class Bricks extends Array
+      constructor: (@viewport, @rows=3) -> this
+
+      # Dimensions
+      size: ->
+        width: @viewport.width()
+        height: @rows * (@[0] ? Brick.prototype).size().height
+
+      # Override push to make sure only brick elements pushed.
+      push: (element) ->
+        if element instanceof Brick then super element else null
+
+      # Remove elements based on search function
+      remove: (fn) ->
+        # Look for matching elements
+        for brick, i in this when fn brick
+          brick.hide()
+
+          # Remove element
+          @splice i, 1
+
+        this
+
+      # Hide all elements
+      hideAll: ->
+        brick.hide() for brick in this
+        this
+
+      # Show all elements
+      showAll: ->
+        brick.show() for brick in this
+        this
+
 Exports
 -------
 
@@ -287,3 +370,5 @@ List of vars exported to global namespace.
       Brick: Brick
       Ball: Ball
       Paddle: Paddle
+      Screen: Screen
+      Bricks: Bricks
