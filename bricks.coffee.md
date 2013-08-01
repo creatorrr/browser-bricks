@@ -158,7 +158,7 @@ All the objects will inherit from this class.
 
       # -- Public --
 
-      constructor: (namespace='', settings={}) ->
+      constructor: (settings={}) ->
         # Make a copy of default settings
         @_settings = _.clone @_settings
 
@@ -166,7 +166,7 @@ All the objects will inherit from this class.
         @_update settings
 
         # Set random name with namespace
-        @id = "#{ namespace }#{ if namespace then '-' else '' }#{ _.uuid() }"
+        @id = _.uuid()
         this
 
       # Show window with settings.
@@ -200,20 +200,24 @@ All the objects will inherit from this class.
 
       # Return or update window position coords.
       position: (coords...) ->
+        default = @_getDefault()
+
         # Set new coords
         if coords.length then @_update
-          left: coords[0] ? @_getDefault().left  # x
-          top:  coords[1] ? @_getDefault().top   # y
+          left: coords[0] ? default.left  # x
+          top:  coords[1] ? default.top   # y
 
         # Return coords
         _.pick @_getAll(), ['top', 'left']
 
       # Return or update window dimensions.
       size: (dimensions...) ->
+        default = @_getDefault()
+
         # Set new dimensions
         if dimensions.length then @_update
-          width:  dimensions[0] ? @_getDefault().width
-          height: dimensions[1] ? @_getDefault().height
+          width:  dimensions[0] ? default.width
+          height: dimensions[1] ? default.height
 
         # Return dimensions
         _.pick @_getAll(), ['width', 'height']
@@ -227,7 +231,6 @@ will be used to render the bricks.
 It's pretty much a useless box.
 
     class Brick extends Box
-      constructor: (args...) -> super @type(), args...
       type: -> 'brick'
 
 Class: Ball (Box)
@@ -249,19 +252,21 @@ instant and the methods to manipulate it.
       # -- Public --
       constructor: (args...) ->
         @_velocity = _.clone @_velocity
-        super @type(), args...
+        super args...
 
       type: -> 'ball'
 
       # Set or retrieve velocity
       velocity: (vel...) ->
+        [vx, vy] = @_getDefault().velocity
+
         # Set new velocity
         if vel.length then @_velocity = [
-          vel[0] ? @_getDefault().velocity[0]         # vx
+          vel[0] ? vx
 
           # y velocity affects distance from top so inverted to preserve
           # upward positive velocity direction.
-          (vel[1] ? @_getDefault().velocity[1]) * -1  # vy
+          (vel[1] ? vy) * -1
         ]
 
         # Return velocity
@@ -311,13 +316,26 @@ This class is supposed to keep track of screen dimensions, offsets etc.
 
       # Set or retrieve offset
       offset: (args...) ->
+        [ox, oy] = @_getDefault().offset
+
         if args.length then @_offset = [
-          args[0] ? @_getDefault().offset[0]  # offsetX
-          args[1] ? @_getDefault().offset[1]  # offsetY
+          args[0] ? ox  # offsetX
+          args[1] ? oy  # offsetY
         ]
 
         # Return offset
         _.clone @_offset
+
+      # Adjust coords
+      adjust: (x=0, y=0) ->
+        # Get offset
+        [xo, yo] = @offset()
+
+        # Return adjusted value
+        [
+          x + xo
+          y + yo
+        ]
 
 Class: Bricks
 -------------
@@ -331,7 +349,9 @@ It also ascertains whether the `Ball` is touching a `Brick`.
       # Dimensions
       size: ->
         width: @viewport.width()
-        height: @rows * (@[0] ? Brick.prototype).size().height
+
+        # Calc the height of column
+        height: @rows * ((_.first this) ? Brick.prototype).size().height
 
       # Override push to make sure only brick elements pushed.
       push: (element) ->
