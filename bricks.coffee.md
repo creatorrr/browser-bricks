@@ -76,6 +76,19 @@ First, let's define some helper functions for the application.
       first: (array) -> array[0]
       last: (array) -> array[array.length-1]
 
+      # Square an integer
+      sqr: (n) -> n*n
+
+      # Vector functions
+      vec:
+        add: (pt, x=0, y=0) -> [
+          pt[0] + x
+          pt[1] + y
+        ]
+
+        dist: ([x1, y1],  [x2, y2]) ->
+          Math.sqrt (_.sqr x1 - x2) + (_.sqr y1 - y2)
+
 Init Function
 -------------
 
@@ -175,6 +188,9 @@ All the objects will inherit from this class.
         @_window?.moveTo?   (@_get 'left'), (@_get 'top')
         @_window?.resizeTo? (@_get 'width'), (@_get 'height')
 
+        # Trigger change event with changed settings
+        @trigger 'change', settings
+
         # Return a copy of settings
         @_getAll()
 
@@ -203,15 +219,24 @@ All the objects will inherit from this class.
           switch v
             when false then 'no'
             when true then 'yes'
-            else v+''
+            else "#{ v }"
 
-        @_window ?= window.open @_url, @id, opts
+        # Open window
+        @_window or= window.open @_url, @id, opts
+
+        # Trigger show event
+        @trigger 'show', this
+
         this
 
       # Hide the window.
       hide: ->
         @_window?.close()
         @_window = null
+
+        # Trigger hide event
+        @trigger 'hide', this
+
         this
 
       # Check if window is visible.
@@ -248,6 +273,19 @@ All the objects will inherit from this class.
 
         # Return dimensions
         _.pick @_getAll(), ['width', 'height']
+
+      # Get all corners
+      corners: ->
+        {width, height} = @size()
+        position = @position()
+
+        # Return corners
+        [
+          position                           # tl
+          _.vec.add position, width, 0       # tr
+          _.vec.add position, width, height  # br
+          _.vec.add position, 0, height      # bl
+        ]
 
 Class: Brick (Box)
 ------------------
@@ -299,8 +337,17 @@ instant and the methods to manipulate it.
         # Return velocity
         _.clone @_velocity
 
-      # Invert velocity
-      bounce: -> @velocity (@_velocity[0] * -1), (@_velocity[1] * -1)
+      # Change direction of velocity components
+      bounce: (x, y) ->
+        # Reverse velocity
+        reverse = (v) -> v * -1
+
+        @velocity newVelocity = [
+          if x then reverse @_velocity[0] else @_velocity[0]
+          if y then reverse @_velocity[1] else @_velocity[1]
+        ]...
+
+        @trigger 'change', velocity: newVelocity
 
 Class: Paddle (Ball)
 --------------------
