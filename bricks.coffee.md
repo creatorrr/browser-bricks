@@ -108,13 +108,40 @@ executed 'onload'.
     # Attach DOM load listener
     window.addEventListener 'load', init, false
 
-Class: Box
-----------
+Class: Events
+-------------
+
+Here is a simple class for managing events on objects.
+
+    class Events
+      constructor: ->
+        # Storage for events
+        @_events = {}
+        this
+
+      # Add event handler
+      on: (name, handler) ->
+        (@_events[name] ?= []).push handler
+        this
+
+      # Remove event
+      off: (name) ->
+        delete @_events[name]
+        this
+
+      # Trigger event handlers
+      trigger: (name, args...) ->
+        if (handlers = @_events[name])?
+          handler? args... for handler in handlers
+        else null
+
+Class: Box (Events)
+-------------------
 
 Now, let's define a box that will be the basic building block for the game.
 All the objects will inherit from this class.
 
-    class Box
+    class Box extends Events
       # -- Private --
 
       _settings:
@@ -200,24 +227,24 @@ All the objects will inherit from this class.
 
       # Return or update window position coords.
       position: (coords...) ->
-        default = @_getDefault()
+        _default = @_getDefault()
 
         # Set new coords
         if coords.length then @_update
-          left: coords[0] ? default.left  # x
-          top:  coords[1] ? default.top   # y
+          left: coords[0] ? _default.left  # x
+          top:  coords[1] ? _default.top   # y
 
         # Return coords
         _.pick @_getAll(), ['top', 'left']
 
       # Return or update window dimensions.
       size: (dimensions...) ->
-        default = @_getDefault()
+        _default = @_getDefault()
 
         # Set new dimensions
         if dimensions.length then @_update
-          width:  dimensions[0] ? default.width
-          height: dimensions[1] ? default.height
+          width:  dimensions[0] ? _default.width
+          height: dimensions[1] ? _default.height
 
         # Return dimensions
         _.pick @_getAll(), ['width', 'height']
@@ -291,8 +318,8 @@ straight line.
         else
           super()
 
-Class: Screen
--------------
+Class: Screen (Events)
+----------------------
 
 This class is supposed to keep track of screen dimensions, offsets etc.
 
@@ -337,8 +364,8 @@ This class is supposed to keep track of screen dimensions, offsets etc.
           y + yo
         ]
 
-Class: Bricks
--------------
+Class: Bricks (Array)
+---------------------
 
 Collection of `Brick` instances that organizes itself.
 It also ascertains whether the `Ball` is touching a `Brick`.
@@ -386,9 +413,11 @@ List of vars exported to global namespace.
     _.extend window ? module.exports ? this,
       _: _
       init: init
+      Events: Events
       Box: Box
       Brick: Brick
       Ball: Ball
       Paddle: Paddle
       Screen: Screen
       Bricks: Bricks
+
