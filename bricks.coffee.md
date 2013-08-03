@@ -22,6 +22,24 @@ Browser Bricks
 
 Alright, let's get on with it.
 
+Constants
+---------
+
+Defined here are constants used in the game.
+`CORNERS` is a list to ascertain a particular corner in a list, following a clockwise order
+starting from top-left.
+
+    CORNERS =
+      TL: 0
+      TR: 1
+      BR: 2
+      BL: 3
+
+`X` and `Y` are just sugar for getting abcissa and ordinate from a point pair.
+
+    X = 0
+    Y = 1
+
 Helper Functions
 ----------------
 
@@ -81,9 +99,9 @@ First, let's define some helper functions for the application.
 
       # Vector functions
       vec:
-        add: (pt, x=0, y=0) -> [
-          pt[0] + x
-          pt[1] + y
+        add: ([left, top], x=0, y=0) -> [
+          left + x
+          top + y
         ]
 
         dist: ([x1, y1],  [x2, y2]) ->
@@ -256,11 +274,12 @@ All the objects will inherit from this class.
 
         # Set new coords
         if coords.length then @_update
-          left: coords[0] ? _default.left  # x
-          top:  coords[1] ? _default.top   # y
+          left: coords[X] ? _default.left  # x
+          top:  coords[Y] ? _default.top   # y
 
         # Return coords
-        _.pick @_getAll(), ['top', 'left']
+        {left, top} = @_getAll()
+        [left, top]
 
       # Return or update window dimensions.
       size: (dimensions...) ->
@@ -268,8 +287,8 @@ All the objects will inherit from this class.
 
         # Set new dimensions
         if dimensions.length then @_update
-          width:  dimensions[0] ? _default.width
-          height: dimensions[1] ? _default.height
+          width:  dimensions[X] ? _default.width
+          height: dimensions[Y] ? _default.height
 
         # Return dimensions
         _.pick @_getAll(), ['width', 'height']
@@ -286,6 +305,17 @@ All the objects will inherit from this class.
           _.vec.add position, width, height  # br
           _.vec.add position, 0, height      # bl
         ]
+
+      # Get center
+      center: ->
+        [tl, tr, br, bl] = @corners()
+
+        # Return center coordinates
+        [
+          (tl[X] + tr[X]) / 2
+          (tl[Y] + bl[Y]) / 2
+        ]
+
 
 Class: Brick (Box)
 ------------------
@@ -327,11 +357,11 @@ instant and the methods to manipulate it.
 
         # Set new velocity
         if vel.length then @_velocity = [
-          vel[0] ? vx
+          vel[X] ? vx
 
           # y velocity affects distance from top so inverted to preserve
           # upward positive velocity direction.
-          (vel[1] ? vy) * -1
+          (vel[Y] ? vy) * -1
         ]
 
         # Return velocity
@@ -343,8 +373,8 @@ instant and the methods to manipulate it.
         reverse = (v) -> v * -1
 
         @velocity newVelocity = [
-          if x then reverse @_velocity[0] else @_velocity[0]
-          if y then reverse @_velocity[1] else @_velocity[1]
+          if x then reverse @_velocity[X] else @_velocity[X]
+          if y then reverse @_velocity[Y] else @_velocity[Y]
         ]...
 
         @trigger 'change', velocity: newVelocity
@@ -361,7 +391,7 @@ straight line.
       # Override velocity to constrain 1D motion
       velocity: (vx) ->
         if vx?
-          super vx, @_velocity[1]
+          super vx, @_velocity[Y]
         else
           super()
 
@@ -383,18 +413,18 @@ This class is supposed to keep track of screen dimensions, offsets etc.
         this
 
       # Get available screen coordinates
-      height: -> @_screen.availHeight - 2*@offset()[1]
-      width: -> @_screen.availWidth - 2*@offset()[0]
-      top: -> @offset()[1]
-      left: -> @offset()[0]
+      height: -> @_screen.availHeight - 2*@offset()[Y]
+      width: -> @_screen.availWidth - 2*@offset()[X]
+      top: -> @offset()[Y]
+      left: -> @offset()[X]
 
       # Set or retrieve offset
       offset: (args...) ->
         [ox, oy] = @_getDefault().offset
 
         if args.length then @_offset = [
-          args[0] ? ox  # offsetX
-          args[1] ? oy  # offsetY
+          args[X] ? ox  # offsetX
+          args[Y] ? oy  # offsetY
         ]
 
         # Return offset
@@ -451,6 +481,19 @@ It also ascertains whether the `Ball` is touching a `Brick`.
       showAll: ->
         brick.show() for brick in this
         this
+
+Class: Grid
+-----------
+
+Grid manages the context and constraints elements according to their context.
+
+    class Grid
+      constructor: ->
+        # Create viewport for the game
+        @viewport =
+        # Create elements
+        @elements =
+          bricks: new Bricks
 
 Exports
 -------
