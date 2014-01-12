@@ -1,0 +1,10 @@
+# Compiled files
+*.js
+
+# Node stuff
+pids
+logs
+results
+
+npm-debug.log
+node_modules

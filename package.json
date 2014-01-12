@@ -1,0 +1,18 @@
+{
+  "name": "bricks",
+  "version": "0.0.0",
+  "description": "browser-pong style breakout game",
+  "main": "bricks.coffee.md",
+  "devDependencies": {
+    "coffee-script": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/creatorrr/browser-bricks.git"
+  },
+  "author": "Diwank Singh",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/creatorrr/browser-bricks/issues"
+  }
+}

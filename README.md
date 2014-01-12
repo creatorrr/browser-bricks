@@ -8,3 +8,4 @@ Goals
 
  * No library, plain old DOM APIs
  * As simple and readble as possible
+

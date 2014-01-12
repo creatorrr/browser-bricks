@@ -3,9 +3,9 @@ Re: [Letter to a Source-Code-Reader](http://stewd.io/pong/lib/pong.js)
 Dear Stewart
 
 Thanks for inspiring me and many like me with the wonders of js.
-With all it's warts and issues, JS is still one of my favorite languages.
-I think simply by it's virtue of being the language of the web, it surpasses most others
-in it's ability to champion the spirit of openness.
+With all its warts and issues, JS is still one of my favorite languages.
+I think simply by its virtue of being the language of the web, it surpasses most others
+in its ability to champion the spirit of openness.
 
 I have tried to keep this as simple as possible for the many awesome source code lovers
 to read, reuse and critique.
@@ -20,7 +20,7 @@ July 2013
 Browser Bricks
 ==============
 
-Alright, let's get on with it.
+Alright, lets get on with it.
 
 Constants
 ---------
@@ -40,10 +40,14 @@ starting from top-left.
     X = 0
     Y = 1
 
+Game constants:
+
+    DRAW_INTERVAL = 100 # ms
+
 Helper Functions
 ----------------
 
-First, let's define some helper functions for the application.
+First, lets define some helper functions for the application.
 
     _ =   # _ namespace
       # Extend objects
@@ -75,7 +79,7 @@ First, let's define some helper functions for the application.
         ("#{ k }#{ eq }#{ v }" for own k, v of obj).join sep
 
       # Defer execution of function
-      defer: (fn, args...) -> window.setTimeout fn, 1, args...
+      defer: (fn, args...) -> setTimeout fn, 1, args...
 
       # Clone object
       clone: (obj) ->
@@ -83,7 +87,7 @@ First, let's define some helper functions for the application.
         if obj is Object obj
           _.extend {}, obj
 
-        else  # Assume it's array otherwise
+        else  # Assume its array otherwise
           obj.splice 0
 
       # Negate function
@@ -96,6 +100,40 @@ First, let's define some helper functions for the application.
 
       # Square an integer
       sqr: (n) -> n*n
+
+      # Return random number between min & max
+      random: (min, max) ->
+        if not max?
+          # Only one arg passed
+          max = min
+          min = 0
+
+        Math.floor (Math.random() * (max - min + 1)) + min
+
+      # Throttle a function (Inspired by http://remysharp.com/2010/07/21/throttling-function-calls/)
+      throttle: (fn, wait, context) ->
+        # Closure vars
+        last = 0
+        deferTimer = null
+
+        # Return throttled fn
+        (args...) ->
+          # Init
+          now = +new Date
+
+          # Callback
+          run = ->
+            last = now
+
+            # Execute fn
+            if context then fn.apply context, args else fn args...
+
+          # Check if wait elapsed
+          if last && now < last + wait
+            clearTimeout deferTimer if deferTimer
+            deferTimer = setTimeout run, wait
+
+          else run()  # For the first time
 
       # Vector functions
       vec:
@@ -110,8 +148,8 @@ First, let's define some helper functions for the application.
 Init Function
 -------------
 
-Let's write a global init function that can be used to register callbacks which are
-executed 'onload'.
+Lets write a global init function that can be used to register callbacks which are
+executed onload.
 
     # Callback register
     init = do ->
@@ -137,7 +175,7 @@ executed 'onload'.
         false
 
     # Attach DOM load listener
-    window.addEventListener 'load', init, false
+    window?.addEventListener 'load', init, false
 
 Class: Events
 -------------
@@ -169,7 +207,7 @@ Here is a simple class for managing events on objects.
 Class: Box (Events)
 -------------------
 
-Now, let's define a box that will be the basic building block for the game.
+Now, lets define a box that will be the basic building block for the game.
 All the objects will inherit from this class.
 
     class Box extends Events
@@ -273,9 +311,12 @@ All the objects will inherit from this class.
         _default = @_getDefault()
 
         # Set new coords
-        if coords.length then @_update
-          left: coords[X] ? _default.left  # x
-          top:  coords[Y] ? _default.top   # y
+        if coords.length
+          @_update changed =
+            left: coords[X] ? _default.left  # x
+            top:  coords[Y] ? _default.top   # y
+
+          @trigger 'move', [changed.left, changed.top]
 
         # Return coords
         {left, top} = @_getAll()
@@ -286,9 +327,12 @@ All the objects will inherit from this class.
         _default = @_getDefault()
 
         # Set new dimensions
-        if dimensions.length then @_update
-          width:  dimensions[X] ? _default.width
-          height: dimensions[Y] ? _default.height
+        if dimensions.length
+          @_update changed =
+            width:  dimensions[X] ? _default.width
+            height: dimensions[Y] ? _default.height
+
+          @trigger 'resize', changed
 
         # Return dimensions
         _.pick @_getAll(), ['width', 'height']
@@ -316,14 +360,13 @@ All the objects will inherit from this class.
           (tl[Y] + bl[Y]) / 2
         ]
 
-
 Class: Brick (Box)
 ------------------
 
-Now let's use the class `Box` to design the `Brick` class which
+Now lets use the class `Box` to design the `Brick` class which
 will be used to render the bricks.
 
-It's pretty much a useless box.
+Its pretty much a useless box.
 
     class Brick extends Box
       type: -> 'brick'
@@ -334,22 +377,68 @@ Class: Ball (Box)
 Alright, so the ball is a little tricky. It has to move two-
 dimensionally and bounce off of objects.
 
-So, we need an instance that also stores it's velocity at any
+So, we need an instance that also stores its velocity at any
 instant and the methods to manipulate it.
 
     class Ball extends Box
       # -- Private --
       _velocity: [0, 0]
 
+      _constraints:
+        top:    -Infinity
+        right:  Infinity
+        bottom: Infinity
+        left:   -Infinity
+
       # Override getDefault to get default velocity
       _getDefault: -> _.extend {velocity: @_velocity}, super()
 
+      # Exercise constraints
+      _checkConstraints: ->
+        constraints = @constraints()
+
+        if (@isTouching constraints.left, 0) or (@isTouching constraints.right, 0)
+          @bounce x: true
+
+        if (@isTouching 0, constraints.top) or (@isTouching 0, constraints.bottom)
+          @bounce y: true
+
       # -- Public --
       constructor: (args...) ->
+        # Copy deafults
         @_velocity = _.clone @_velocity
+        @_constraints = _.clone @_constraints
+
+        # Make sure ball remains within constraints
+        @on 'move', _.throttle (=> @_checkConstraints()), DRAW_INTERAL
+
         super args...
 
       type: -> 'ball'
+
+      # Check if ball is touching a line
+      isTouching: (x=0, y=0) ->
+        # Get props
+        v = @velocity()
+
+        [left, top] = @position()
+        {width, height} = @size()
+        right = left + width
+        bottom = top + height
+
+        if x
+          # Check if left or right edge touching line left = x
+          if v[X] > 0   # Ball moving right
+            right >= x
+          else          # Ball moving left
+            left <= x
+
+        else
+          # Check if top or bottom edge touching line top = y
+          if v[Y] > 0   # Ball moving up
+            top <= y
+          else          # Ball moving down
+            bottom >= y
 
       # Set or retrieve velocity
       velocity: (vel...) ->
@@ -368,21 +457,28 @@ instant and the methods to manipulate it.
         _.clone @_velocity
 
       # Change direction of velocity components
-      bounce: (x, y) ->
+      bounce: (dir) ->
         # Reverse velocity
         reverse = (v) -> v * -1
 
         @velocity newVelocity = [
-          if x then reverse @_velocity[X] else @_velocity[X]
-          if y then reverse @_velocity[Y] else @_velocity[Y]
+          if dir.x then reverse @_velocity[X] else @_velocity[X]
+          if dir.y then reverse @_velocity[Y] else @_velocity[Y]
         ]...
 
         @trigger 'change', velocity: newVelocity
 
+      # Set constraints
+      constraints: (constraints={}) ->
+        changed = _.extend @_constraints, constraints
+
+        # Return a copy
+        _.clone changed
+
 Class: Paddle (Ball)
 --------------------
 
-A paddle is basically an enlarged ball that's constrained to move in a
+A paddle is basically an enlarged ball thats constrained to move in a
 straight line.
 
     class Paddle extends Ball
@@ -400,9 +496,9 @@ Class: Screen (Events)
 
 This class is supposed to keep track of screen dimensions, offsets etc.
 
-    class Screen
+    class Screen extends Events
       # -- Private --
-      _screen: window.screen
+      _screen: window?.screen
       _offset: [0, 0]
       _getDefault: -> offset: @constructor::_offset
 
@@ -441,6 +537,9 @@ This class is supposed to keep track of screen dimensions, offsets etc.
           y + yo
         ]
 
+      adjustX: (x) -> (@adjust x, 0)[X]
+      adjustY: (y) -> (@adjust 0, y)[Y]
+
 Class: Bricks (Array)
 ---------------------
 
@@ -448,18 +547,13 @@ Collection of `Brick` instances that organizes itself.
 It also ascertains whether the `Ball` is touching a `Brick`.
 
     class Bricks extends Array
-      constructor: (@viewport, @rows=3) -> this
+      constructor: (@viewport) ->
+        @_rows = 3
 
-      # Dimensions
-      size: ->
-        width: @viewport.width()
+      # Generate bricks
+      generate: ({height, rows}={height:10, rows:3}) ->
+        @_rows = rows
 
-        # Calc the height of column
-        height: @rows * ((_.first this) ? Brick.prototype).size().height
-
-      # Override push to make sure only brick elements pushed.
-      push: (element) ->
-        if element instanceof Brick then super element else null
 
       # Remove elements based on search function
       remove: (fn) ->
@@ -468,32 +562,62 @@ It also ascertains whether the `Ball` is touching a `Brick`.
           brick.hide()
 
           # Remove element
-          @splice i, 1
+          this[i] = null
 
         this
 
       # Hide all elements
-      hideAll: ->
-        brick.hide() for brick in this
+      hide: ->
+        brick?.hide() for brick in this
         this
 
       # Show all elements
-      showAll: ->
-        brick.show() for brick in this
+      show: ->
+        brick?.show() for brick in this
         this
 
-Class: Grid
------------
+Class: Grid (Screen)
+--------------------
 
 Grid manages the context and constraints elements according to their context.
 
-    class Grid
+    class Grid extends Screen
       constructor: ->
-        # Create viewport for the game
-        @viewport =
+        # Set offset and get viewport props
+        offset = @offset 10, 10
+        height = @height()
+        width  = @width()
+
         # Create elements
         @elements =
-          bricks: new Bricks
+          bricks: (new Bricks this).generate
+            height: 0.1 * height   # Each brick is 10% in height of viewport
+
+          paddle: new Paddle
+            height: paddleHeight = 0.05 * height    # The paddle is 5% viewport height
+            width:  0.3 * width                     # and 30% viewport width
+            top:    @adjustY paddleTop = height - paddleHeight  # Place at bottom
+            left:   @adjustX center = width / 2     # and center
+
+          ball: new Ball
+            height: ballHeight = 0.05 * height      # The ball is 5% viewport size
+            width:  ballHeight
+            top:    @adjustY paddleTop - ballHeight # Place ball on the paddle
+            left:   @adjustX center
+
+        # Set constraints for elements
+        limits =
+          top: @adjustY 0
+          bottom: @adjustY height
+          left: @adjustX 0
+          right: @adjustX width
+
+        @elements.ball.constraints limits
+        @elements.paddle.constraints limits
+
+      # Change visibility
+      show: -> element.show() for element in @elements
+      hide: -> element.hide() for element in @elements
 
 Exports
 -------
