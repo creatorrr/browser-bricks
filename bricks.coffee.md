@@ -145,38 +145,6 @@ First, lets define some helper functions for the application.
         dist: ([x1, y1],  [x2, y2]) ->
           Math.sqrt (_.sqr x1 - x2) + (_.sqr y1 - y2)
 
-Init Function
--------------
-
-Lets write a global init function that can be used to register callbacks which are
-executed onload.
-
-    # Callback register
-    init = do ->
-      # Store registered callbacks
-      callbacks = []
-
-      # Run callbacks in order registered
-      exec = -> fn?() for fn in callbacks
-
-      # Onload callback
-      onLoad = (fn) ->
-        window.removeEventListener 'load', init, false
-        fn?()
-
-      (cb) ->
-        if cb?
-          # Register callback
-          callbacks.push cb
-        else
-          # Defer execution until stack cleared
-          onLoad -> _.defer exec
-
-        false
-
-    # Attach DOM load listener
-    window?.addEventListener 'load', init, false
-
 Class: Events
 -------------
 
@@ -234,11 +202,9 @@ All the objects will inherit from this class.
       _window: null  # Empty window object
       _url: '/index.html' # Fixed to current page, renders based on context
 
-      _EDITABLE: -> Object.keys @constructor::_settings   # Editable settings
-
       _update: (settings) ->
         # Update settings
-        _.extend @_settings, (_.pick settings, @_EDITABLE())
+        _.extend @_settings, settings
 
         # Adjust window props
         @_window?.moveTo?   (@_get 'left'), (@_get 'top')
@@ -250,7 +216,7 @@ All the objects will inherit from this class.
         # Return a copy of settings
         @_getAll()
 
-      _get: (prop) -> @_settings[prop] if prop in @_EDITABLE()
+      _get: (prop) -> @_settings[prop]
       _getAll: -> _.extend (_.clone @_settings), @_fixed
 
       _getDefault: -> @constructor::_settings
@@ -266,7 +232,6 @@ All the objects will inherit from this class.
 
         # Set random name with namespace
         @id = _.uuid()
-        this
 
       # Show window with settings.
       show: ->
@@ -369,7 +334,7 @@ will be used to render the bricks.
 Its pretty much a useless box.
 
     class Brick extends Box
-      type: -> 'brick'
+      type: 'brick'
 
 Class: Ball (Box)
 -----------------
@@ -384,61 +349,17 @@ instant and the methods to manipulate it.
       # -- Private --
       _velocity: [0, 0]
 
-      _constraints:
-        top:    -Infinity
-        right:  Infinity
-        bottom: Infinity
-        left:   -Infinity
-
       # Override getDefault to get default velocity
       _getDefault: -> _.extend {velocity: @_velocity}, super()
-
-      # Exercise constraints
-      _checkConstraints: ->
-        constraints = @constraints()
-
-        if (@isTouching constraints.left, 0) or (@isTouching constraints.right, 0)
-          @bounce x: true
-
-        if (@isTouching 0, constraints.top) or (@isTouching 0, constraints.bottom)
-          @bounce y: true
 
       # -- Public --
       constructor: (args...) ->
         # Copy deafults
         @_velocity = _.clone @_velocity
-        @_constraints = _.clone @_constraints
-
-        # Make sure ball remains within constraints
-        @on 'move', _.throttle (=> @_checkConstraints()), DRAW_INTERAL
 
         super args...
 
-      type: -> 'ball'
-
-      # Check if ball is touching a line
-      isTouching: (x=0, y=0) ->
-        # Get props
-        v = @velocity()
-
-        [left, top] = @position()
-        {width, height} = @size()
-        right = left + width
-        bottom = top + height
-
-        if x
-          # Check if left or right edge touching line left = x
-          if v[X] > 0   # Ball moving right
-            right >= x
-          else          # Ball moving left
-            left <= x
-
-        else
-          # Check if top or bottom edge touching line top = y
-          if v[Y] > 0   # Ball moving up
-            top <= y
-          else          # Ball moving down
-            bottom >= y
+      type: 'ball'
 
       # Set or retrieve velocity
       velocity: (vel...) ->
@@ -462,18 +383,11 @@ instant and the methods to manipulate it.
         reverse = (v) -> v * -1
 
         @velocity newVelocity = [
-          if dir.x then reverse @_velocity[X] else @_velocity[X]
-          if dir.y then reverse @_velocity[Y] else @_velocity[Y]
+          if dir[X] then reverse @_velocity[X] else @_velocity[X]
+          if dir[Y] then reverse @_velocity[Y] else @_velocity[Y]
         ]...
 
         @trigger 'change', velocity: newVelocity
-
-      # Set constraints
-      constraints: (constraints={}) ->
-        changed = _.extend @_constraints, constraints
-
-        # Return a copy
-        _.clone changed
 
 Class: Paddle (Ball)
 --------------------
@@ -482,7 +396,7 @@ A paddle is basically an enlarged ball thats constrained to move in a
 straight line.
 
     class Paddle extends Ball
-      type: -> 'paddle'
+      type: 'paddle'
 
       # Override velocity to constrain 1D motion
       velocity: (vx) ->
@@ -579,12 +493,12 @@ It also ascertains whether the `Ball` is touching a `Brick`.
 Class: Grid (Screen)
 --------------------
 
-Grid manages the context and constraints elements according to their context.
+Grid manages the elements according to their context.
 
     class Grid extends Screen
       constructor: ->
         # Set offset and get viewport props
-        offset = @offset 10, 10
+        offset = @offset()
         height = @height()
         width  = @width()
 
@@ -605,16 +519,6 @@ Grid manages the context and constraints elements according to their context.
             top:    @adjustY paddleTop - ballHeight # Place ball on the paddle
             left:   @adjustX center
 
-        # Set constraints for elements
-        limits =
-          top: @adjustY 0
-          bottom: @adjustY height
-          left: @adjustX 0
-          right: @adjustX width
-
-        @elements.ball.constraints limits
-        @elements.paddle.constraints limits
-
       # Change visibility
       show: -> element.show() for element in @elements
       hide: -> element.hide() for element in @elements
@@ -624,7 +528,7 @@ Exports
 
 List of vars exported to global namespace.
 
-    _.extend window ? module.exports ? this,
+    _.extend window
       _: _
       init: init
       Events: Events
