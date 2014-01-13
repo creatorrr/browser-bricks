@@ -26,14 +26,12 @@ Constants
 ---------
 
 Defined here are constants used in the game.
-`CORNERS` is a list to ascertain a particular corner in a list, following a clockwise order
-starting from top-left.
+To ascertain a particular corner in a list, follow clockwise starting from top-left.
 
-    CORNERS =
-      TL: 0
-      TR: 1
-      BR: 2
-      BL: 3
+    TL = 0
+    TR = 1
+    BR = 2
+    BL = 3
 
 `X` and `Y` are just sugar for getting abcissa and ordinate from a point pair.
 
@@ -179,7 +177,6 @@ All the objects will inherit from this class.
 
     class Box extends Events
       # -- Private --
-
       _settings:
         # Default settings
         height: 100
@@ -199,7 +196,7 @@ All the objects will inherit from this class.
         status:      false
 
       _window: null  # Empty window object
-      _url: '/index.html' # Fixed to current page, renders based on context
+      _url: '' # Empty placeholder
 
       _update: (settings) ->
         # Update settings
@@ -301,11 +298,11 @@ All the objects will inherit from this class.
           @trigger 'resize', changed
 
         # Return dimensions
-        _.pick @_getAll(), ['width', 'height']
+        [(@_get 'width'), (@_get 'height')]
 
       # Get all corners
       corners: ->
-        {width, height} = @size()
+        [width, height] = @size()
         position = @position()
 
         # Return corners
@@ -389,6 +386,19 @@ instant and the methods to manipulate it.
         ]...
 
         @trigger 'change', velocity: newVelocity
+
+      # Override show to make sure paddle is correctly sized after it becomes visible
+      show: (args...) ->
+        super args...
+
+        # Resize to current size
+        @size @size()...
+
+        # FIXME: re-orient
+        _.defer =>
+          @size @size()...
+
+        this
 
 Class: Paddle (Ball)
 --------------------
@@ -532,20 +542,20 @@ Grid manages the elements according to their context.
             columns: 10
 
           paddle: new Paddle
-            height: paddleHeight = 0.05 * height    # The paddle is 5% viewport height
+            height: paddleHeight = 0.02 * height
             width:  0.3 * width                     # and 30% viewport width
             top:    @adjustY paddleTop = height - paddleHeight  # Place at bottom
             left:   @adjustX center = width / 2     # and center
 
           ball: new Ball
-            height: ballHeight = 0.05 * height      # The ball is 5% viewport size
+            height: ballHeight = 0.05 * height
             width:  ballHeight
             top:    @adjustY paddleTop - ballHeight # Place ball on the paddle
             left:   @adjustX center
 
       # Change visibility
-      show: -> element.show() for element in @elements
-      hide: -> element.hide() for element in @elements
+      show: -> element.show() for name, element of @elements
+      hide: -> element.hide() for name, element of @elements
 
 Class: StateMachine (Events)
 ----------------------------
