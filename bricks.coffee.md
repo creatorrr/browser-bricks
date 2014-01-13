@@ -62,11 +62,10 @@ First, lets define some helper functions for the application.
 
       # UUID function (Copied shamelessly from https://gist.github.com/bmc/1893440)
       uuid: ->
-        'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) ->
+        'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace /[xy]/g, (c) ->
           r = Math.random() * 16 | 0
           v = if c is 'x' then r else (r & 0x3|0x8)
-          v.toString(16)
-        )
+          v.toString 16
 
       # Simple serializer for flat objects
       serialize: (obj, {sep, eq}, cb) ->
@@ -393,10 +392,6 @@ instant and the methods to manipulate it.
 
         # Resize to current size
         @size @size()...
-
-        # FIXME: re-orient
-        _.defer =>
-          @size @size()...
 
         this
 
