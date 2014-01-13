@@ -107,6 +107,23 @@ First, lets define some helper functions for the application.
 
         Math.floor (Math.random() * (max - min + 1)) + min
 
+      # Return function thats run only once
+      once: (fn) ->
+        ran = false
+        mem = null
+
+        (args...) ->
+          # Return stored result if already run
+          return mem if ran
+
+          # Else compute and store result
+          ran = true
+          mem = fn.apply this, args
+
+          # Deref fn return result
+          fn = null
+          mem
+
       # Throttle a function (Inspired by http://remysharp.com/2010/07/21/throttling-function-calls/)
       throttle: (fn, wait, context) ->
         # Closure vars
@@ -133,11 +150,16 @@ First, lets define some helper functions for the application.
           else run()  # For the first time
 
       # Vector functions
-      vec: ([x, y]) ->
+      vec: ([x, y], [x1, y1]=[0, 0]) ->
         add: ([x2, y2]) -> [
           x2 + x
           y2 + y
-        ]
+        ].map Math.ceil
+
+        center: -> [
+          (x + x1) / 2
+          (y + y1) / 2
+        ].map Math.ceil
 
         dist: ([x2, y2]) ->
           Math.sqrt (_.sqr x - x2) + (_.sqr y - y2)
@@ -216,8 +238,15 @@ All the objects will inherit from this class.
 
       _getDefault: -> @constructor::_settings
 
-      # -- Public --
+      # FIXME: Hacky way to find height of chrome
+      _getChromeHeight: _.once ->
+        total = window.screen.availHeight
+        taskbar = window.screen.availTop
+        body = (document.querySelector 'body').scrollHeight
 
+        chrome = total - taskbar - body
+
+      # -- Public --
       constructor: (settings={}) ->
         super
 
@@ -303,13 +332,26 @@ All the objects will inherit from this class.
       corners: ->
         [width, height] = @size()
         position = @position()
+        ch = @_getChromeHeight()
 
         # Return corners
         [
-          position                            # tl
-          _.vec(position).add [width, 0]      # tr
+          _.vec(position).add [0, -ch]        # tl
+          _.vec(position).add [width, -ch]    # tr
           _.vec(position).add [width, height] # br
           _.vec(position).add [0, height]     # bl
+        ]
+
+      # Get edge centers
+      edgeCenters: ->
+        [tl, tr, br, bl] = @corners()
+
+        # Return center coordinates
+        [
+          _.vec(tl, tr).center()
+          _.vec(tr, br).center()
+          _.vec(br, bl).center()
+          _.vec(bl, tl).center()
         ]
 
       # Get center
@@ -317,10 +359,7 @@ All the objects will inherit from this class.
         [tl, tr, br, bl] = @corners()
 
         # Return center coordinates
-        [
-          (tl[X] + tr[X]) / 2
-          (tl[Y] + bl[Y]) / 2
-        ]
+        _.vec(tl, br).center()
 
 Class: Brick (Box)
 ------------------
@@ -368,7 +407,7 @@ instant and the methods to manipulate it.
 
           # y velocity affects distance from top so inverted to preserve
           # upward positive velocity direction.
-          (vel[Y] ? vy) * -1
+          -(vel[Y] ? vy)
         ]
 
         # Return velocity
@@ -377,7 +416,7 @@ instant and the methods to manipulate it.
       # Change direction of velocity components
       bounce: (dir) ->
         # Reverse velocity
-        reverse = (v) -> v * -1
+        reverse = (v) -> -v
 
         @velocity newVelocity = [
           if dir[X] then reverse @_velocity[X] else @_velocity[X]
@@ -470,6 +509,9 @@ It also ascertains whether the `Ball` is touching a `Brick`.
       # -- Private --
       # Generate bricks
       _generate: ({@columns, @rows}) ->
+        # Viewport dimensions
+        ch = Box::_getChromeHeight()
+
         # Brick dimensions
         @brick =
           height: height = Math.ceil @height / @rows
@@ -483,7 +525,7 @@ It also ascertains whether the `Ball` is touching a `Brick`.
             this[row].push new Brick
               height: height
               width: width
-              top: height * row
+              top: (height + 2 * ch) * row
               left: width * column
 
       constructor: (viewport, props) ->
@@ -529,6 +571,7 @@ Grid manages the elements according to their context.
         offset = @offset()
         height = @height()
         width  = @width()
+        ch = Box::_getChromeHeight()
 
         # Create elements
         @elements =
@@ -538,15 +581,17 @@ Grid manages the elements according to their context.
 
           paddle: new Paddle
             height: paddleHeight = 0.02 * height
-            width:  0.3 * width                     # and 30% viewport width
+            width:  paddleWidth = 0.3 * width                     # and 30% viewport width
             top:    @adjustY paddleTop = height - paddleHeight  # Place at bottom
-            left:   @adjustX center = width / 2     # and center
+            left:   @adjustX (center = width / 2) - paddleWidth / 2     # and center
 
           ball: new Ball
-            height: ballHeight = 0.05 * height
+            height: ballHeight = 0.1 * height
             width:  ballHeight
-            top:    @adjustY paddleTop - ballHeight # Place ball on the paddle
-            left:   @adjustX center
+
+            # Place ball on the paddle
+            top:    @adjustY paddleTop - ballHeight - 2 * ch
+            left:   @adjustX center - ballHeight / 2
 
       # Change visibility
       show: -> element.show() for name, element of @elements
