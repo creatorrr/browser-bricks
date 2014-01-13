@@ -154,7 +154,6 @@ Here is a simple class for managing events on objects.
       constructor: ->
         # Storage for events
         @_events = {}
-        this
 
       # Add event handler
       on: (name, handler) ->
@@ -224,6 +223,8 @@ All the objects will inherit from this class.
       # -- Public --
 
       constructor: (settings={}) ->
+        super
+
         # Make a copy of default settings
         @_settings = _.clone @_settings
 
@@ -350,7 +351,7 @@ instant and the methods to manipulate it.
       _velocity: [0, 0]
 
       # Override getDefault to get default velocity
-      _getDefault: -> _.extend {velocity: @_velocity}, super()
+      _getDefault: -> _.extend {velocity: @_velocity}, super
 
       # -- Public --
       constructor: (args...) ->
@@ -403,7 +404,7 @@ straight line.
         if vx?
           super vx, @_velocity[Y]
         else
-          super()
+          super
 
 Class: Screen (Events)
 ----------------------
@@ -420,7 +421,7 @@ This class is supposed to keep track of screen dimensions, offsets etc.
       constructor: ->
         # Copy offset
         @_offset = _.clone @_offset
-        this
+        super
 
       # Get available screen coordinates
       height: -> @_screen.availHeight - 2*@offset()[Y]
@@ -523,19 +524,84 @@ Grid manages the elements according to their context.
       show: -> element.show() for element in @elements
       hide: -> element.hide() for element in @elements
 
+Class: StateMachine (Events)
+----------------------------
+
+We use a state machine (fancy term for a simple concept) to manage game state.
+
+    class StateMachine extends Events
+      # -- Private --
+      _getState: -> @_state ? null
+      _setState: (next) ->
+        unless next?
+          return @_throw "Invalid state '#{ next }'"
+
+        old = @_getState()
+        @_state = next+''
+        @trigger 'state:change', old, next
+
+        next
+
+      _throw: (error) ->
+        error = new Error error
+        @trigger 'error', error
+        error
+
+      _addEvents: (state, events) ->
+        # Add to blueprint
+        (@_blueprint or= {})[state] = events
+
+        # Add events to machine
+        for event of events
+          this[(event+'').toLowerCase()] ?= =>
+            # Get current state and find out if event allowed
+            current = @_getState()
+            allowed = (next = @_blueprint[current]?[event])?
+
+            # Set next state
+            if allowed
+              @_setState next
+            else
+              @_throw "Invalid event '#{ event }' for current state '#{ current }'"
+              false
+
+      # -- Public --
+      constructor: (states) ->
+        # List of states and events to initialize machine
+        # Ex: [
+        #   {
+        #     state: 'blah',
+        #     events: {
+        #       'someEvent': 'newState'
+        #     }
+        #   },
+        #   { ... }
+        # ]
+
+        super
+
+        # Add events for corresponding states
+        for {state, events} in states
+          @_addEvents state, events
+
+        # Start
+        @trigger 'start', this
+        @_setState states[0].state if states[0]
+
 Exports
 -------
 
 List of vars exported to global namespace.
 
-    _.extend window
+    _.extend window,
       _: _
-      init: init
       Events: Events
       Box: Box
       Brick: Brick
       Ball: Ball
       Paddle: Paddle
       Screen: Screen
+      Grid: Grid
       Bricks: Bricks
+      StateMachine: StateMachine
 
