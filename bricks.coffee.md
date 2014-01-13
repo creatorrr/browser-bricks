@@ -462,33 +462,55 @@ Collection of `Brick` instances that organizes itself.
 It also ascertains whether the `Ball` is touching a `Brick`.
 
     class Bricks extends Array
-      constructor: (@viewport) ->
-        @_rows = 3
-
+      # -- Private --
       # Generate bricks
-      generate: ({height, rows}={height:10, rows:3}) ->
-        @_rows = rows
+      _generate: ({@columns, @rows}) ->
+        # Brick dimensions
+        @brick =
+          height: height = Math.ceil @height / @rows
+          width: width = Math.ceil @width / @columns
 
+        # Add bricks
+        for row in [0...@rows]
+          this.push []
+
+          for column in [0...@columns]
+            this[row].push new Brick
+              height: height
+              width: width
+              top: height * row
+              left: width * column
+
+      constructor: (viewport, props) ->
+        @_initialized = false
+
+        # Default dimensions
+        @height = viewport.height() * 0.3
+        @width = viewport.width()
+
+        # Generate bricks
+        @_generate props
+
+        super
 
       # Remove elements based on search function
-      remove: (fn) ->
-        # Look for matching elements
-        for brick, i in this when fn brick
-          brick.hide()
+      remove: (i, j) ->
+        # Hide brick
+        (brick = this[i][j]).hide()
 
-          # Remove element
-          this[i] = null
+        # Remove element
+        this[i][j] = null
 
         this
 
       # Hide all elements
       hide: ->
-        brick?.hide() for brick in this
+        brick?.hide() for brick in row for row in this
         this
 
       # Show all elements
       show: ->
-        brick?.show() for brick in this
+        brick?.show() for brick in row for row in this
         this
 
 Class: Grid (Screen)
@@ -505,8 +527,9 @@ Grid manages the elements according to their context.
 
         # Create elements
         @elements =
-          bricks: (new Bricks this).generate
-            height: 0.1 * height   # Each brick is 10% in height of viewport
+          bricks: new Bricks this,
+            rows: 3
+            columns: 10
 
           paddle: new Paddle
             height: paddleHeight = 0.05 * height    # The paddle is 5% viewport height
