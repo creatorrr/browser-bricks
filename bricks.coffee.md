@@ -49,7 +49,7 @@ Helper Functions
 
 First, lets define some helper functions for the application.
 
-    _ =   # _ namespace
+    _ =
       # Extend objects
       extend: (dest, src) ->
         dest[k] = v for own k, v of src
@@ -136,14 +136,14 @@ First, lets define some helper functions for the application.
           else run()  # For the first time
 
       # Vector functions
-      vec:
-        add: ([left, top], x=0, y=0) -> [
-          left + x
-          top + y
+      vec: ([x, y]) ->
+        add: ([x2, y2]) -> [
+          x2 + x
+          y2 + y
         ]
 
-        dist: ([x1, y1],  [x2, y2]) ->
-          Math.sqrt (_.sqr x1 - x2) + (_.sqr y1 - y2)
+        dist: ([x2, y2]) ->
+          Math.sqrt (_.sqr x - x2) + (_.sqr y - y2)
 
 Class: Events
 -------------
@@ -310,10 +310,10 @@ All the objects will inherit from this class.
 
         # Return corners
         [
-          position                           # tl
-          _.vec.add position, width, 0       # tr
-          _.vec.add position, width, height  # br
-          _.vec.add position, 0, height      # bl
+          position                            # tl
+          _.vec(position).add [width, 0]      # tr
+          _.vec(position).add [width, height] # br
+          _.vec(position).add [0, height]     # bl
         ]
 
       # Get center
@@ -565,6 +565,8 @@ We use a state machine (fancy term for a simple concept) to manage game state.
               @_throw "Invalid event '#{ event }' for current state '#{ current }'"
               false
 
+      _addState:({state, events}) -> @_addEvents state, events
+
       # -- Public --
       constructor: (states) ->
         # List of states and events to initialize machine
@@ -581,8 +583,8 @@ We use a state machine (fancy term for a simple concept) to manage game state.
         super
 
         # Add events for corresponding states
-        for {state, events} in states
-          @_addEvents state, events
+        for state in states
+          @_addState state
 
         # Start
         @trigger 'start', this
