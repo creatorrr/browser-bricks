@@ -48,6 +48,11 @@ Helper Functions
 First, lets define some helper functions for the application.
 
     _ =
+      # Iterate N times
+      times: (n, fn, ctx, args...) ->
+        i = 1
+        i++ and fn.apply ctx, args while i <= n
+
       # Extend objects
       extend: (dest, src) ->
         dest[k] = v for own k, v of src
@@ -125,7 +130,7 @@ First, lets define some helper functions for the application.
           mem
 
       # Throttle a function (Inspired by http://remysharp.com/2010/07/21/throttling-function-calls/)
-      throttle: (fn, wait, context) ->
+      throttle: (wait, fn, context) ->
         # Closure vars
         last = 0
         deferTimer = null
@@ -154,12 +159,17 @@ First, lets define some helper functions for the application.
         add: ([x2, y2]) -> [
           x2 + x
           y2 + y
-        ].map Math.ceil
+        ]
+
+        multiply: (scalar) -> [
+          x * scalar
+          y * scalar
+        ]
 
         center: -> [
           (x + x1) / 2
           (y + y1) / 2
-        ].map Math.ceil
+        ]
 
         dist: ([x2, y2]) ->
           Math.sqrt (_.sqr x - x2) + (_.sqr y - y2)
@@ -187,7 +197,7 @@ Here is a simple class for managing events on objects.
       # Trigger event handlers
       trigger: (name, args...) ->
         if (handlers = @_events[name])?
-          handler? args... for handler in handlers
+          handler.apply this, args for handler in handlers
         else null
 
 Class: Box (Events)
@@ -298,14 +308,14 @@ All the objects will inherit from this class.
         this
 
       # Return or update window position coords.
-      position: (coords...) ->
+      position: (coords) ->
         _default = @_getDefault()
 
         # Set new coords
-        if coords.length
+        if coords
           @_update changed =
-            left: coords[X] ? _default.left  # x
-            top:  coords[Y] ? _default.top   # y
+            left: Math.ceil coords[X] ? _default.left  # x
+            top:  Math.ceil coords[Y] ? _default.top   # y
 
           @trigger 'move', [changed.left, changed.top]
 
@@ -314,14 +324,14 @@ All the objects will inherit from this class.
         [left, top]
 
       # Return or update window dimensions.
-      size: (dimensions...) ->
+      size: (dimensions) ->
         _default = @_getDefault()
 
         # Set new dimensions
-        if dimensions.length
+        if dimensions
           @_update changed =
-            width:  dimensions[X] ? _default.width
-            height: dimensions[Y] ? _default.height
+            width:  Math.ceil dimensions[X] ? _default.width
+            height: Math.ceil dimensions[Y] ? _default.height
 
           @trigger 'resize', changed
 
@@ -398,20 +408,20 @@ instant and the methods to manipulate it.
       type: 'ball'
 
       # Set or retrieve velocity
-      velocity: (vel...) ->
+      velocity: (vel) ->
         [vx, vy] = @_getDefault().velocity
 
         # Set new velocity
-        if vel.length then @_velocity = [
+        if vel then @_velocity = [
           vel[X] ? vx
 
           # y velocity affects distance from top so inverted to preserve
           # upward positive velocity direction.
           -(vel[Y] ? vy)
-        ]
+        ].map Math.ceil
 
         # Return velocity
-        _.clone @_velocity
+        @_velocity
 
       # Change direction of velocity components
       bounce: (dir) ->
@@ -430,9 +440,18 @@ instant and the methods to manipulate it.
         super args...
 
         # Resize to current size
-        @size @size()...
+        @size @size()
 
         this
+
+      # Move one step
+      move: (n=1) ->
+        _.times n, =>
+          change = _.vec(@velocity()).multiply DRAW_INTERVAL / 1000
+
+          # Move to new position
+          @position _.vec(@position())
+            .add change
 
 Class: Paddle (Ball)
 --------------------
@@ -443,12 +462,16 @@ straight line.
     class Paddle extends Ball
       type: 'paddle'
 
-      # Override velocity to constrain 1D motion
-      velocity: (vx) ->
-        if vx?
-          super vx, @_velocity[Y]
-        else
-          super
+      left: ->
+        [vx, vy] = @velocity().map Math.abs
+        @velocity [-vx, vy]
+
+        this
+
+      right: ->
+        @velocity @velocity().map Math.abs
+
+        this
 
 Class: Screen (Events)
 ----------------------
@@ -528,7 +551,10 @@ It also ascertains whether the `Ball` is touching a `Brick`.
               top: (height + 2 * ch) * row
               left: width * column
 
+      # -- Public --
       constructor: (viewport, props) ->
+        super
+
         @_initialized = false
 
         # Default dimensions
@@ -538,7 +564,9 @@ It also ascertains whether the `Ball` is touching a `Brick`.
         # Generate bricks
         @_generate props
 
-        super
+      # Map function
+      map: (fn) ->
+        fn? brick for brick in row for row in this
 
       # Remove elements based on search function
       remove: (i, j) ->
@@ -567,6 +595,8 @@ Grid manages the elements according to their context.
 
     class Grid extends Screen
       constructor: ->
+        super
+
         # Set offset and get viewport props
         offset = @offset()
         height = @height()
@@ -581,9 +611,9 @@ Grid manages the elements according to their context.
 
           paddle: new Paddle
             height: paddleHeight = 0.02 * height
-            width:  paddleWidth = 0.3 * width                     # and 30% viewport width
+            width:  paddleWidth = 0.3 * width
             top:    @adjustY paddleTop = height - paddleHeight  # Place at bottom
-            left:   @adjustX (center = width / 2) - paddleWidth / 2     # and center
+            left:   @adjustX (center = width / 2) - paddleWidth / 2
 
           ball: new Ball
             height: ballHeight = 0.1 * height
@@ -592,6 +622,10 @@ Grid manages the elements according to their context.
             # Place ball on the paddle
             top:    @adjustY paddleTop - ballHeight - 2 * ch
             left:   @adjustX center - ballHeight / 2
+
+        # Set velocity
+        @elements.paddle.velocity [100, 0]
+        @elements.ball.velocity [100, 0]
 
       # Change visibility
       show: -> element.show() for name, element of @elements
@@ -609,9 +643,9 @@ We use a state machine (fancy term for a simple concept) to manage game state.
         unless next?
           return @_throw "Invalid state '#{ next }'"
 
-        old = @_getState()
+        current = @_getState()
         @_state = next+''
-        @trigger 'state:change', old, next
+        @trigger 'state:change', current, next
 
         next
 
@@ -660,8 +694,133 @@ We use a state machine (fancy term for a simple concept) to manage game state.
           @_addState state
 
         # Start
-        @trigger 'start', this
-        @_setState states[0].state if states[0]
+        @trigger states[0].state if states[0]
+
+      # Override trigger to run machine events
+      trigger: (event, args...) ->
+        unless stateEvent = this[event]? args...
+          super event, args...
+
+        this
+
+Class Game (StateMachine)
+-------------------------
+
+    class Game extends StateMachine
+      # -- Private --
+      _draw: ->
+        # Draw elements
+        @show()
+        this
+
+      _erase: ->
+        # Remove elements
+        @hide()
+        this
+
+      _controlGame: (key) ->
+        # Elements
+        {paddle} = @_grid.elements
+
+        # Game controls
+        switch key.keyCode
+          when 32 then @resume()              # space
+          when 80 then @pause()               # 'p'
+          when 27 then @stop()                # Esc
+          when 37 then paddle.left().move()   # <-
+          when 39 then paddle.right().move()  # ->
+          else @trigger 'control:invalid'
+
+      _loop: (current, next) ->
+       # if next running then draw and timeout to self
+       # else pause or stop
+
+      # -- Public --
+      constructor: ->
+        # Define game states
+        super [
+          {
+            state: 'idle'
+            events: {
+              start: 'running'
+            }
+          }
+          {
+            state: 'running'
+            events: {
+              pause: 'paused'
+              stop: 'idle'
+              win: 'won'
+              lose: 'lost'
+            }
+          }
+          {
+            state: 'paused'
+            events: {
+              resume: 'running'
+              stop: 'idle'
+            }
+          }
+          {
+            state: 'won'
+            events: {
+              reset: 'idle'
+            }
+          }
+          {
+            state: 'lost'
+            events: {
+              reset: 'idle'
+            }
+          }
+        ]
+
+        # Init game elements and controls
+        @_grid = new Grid
+        @on 'key:pressed', @_controlGame
+
+        # Run game cycle on state change
+        @on 'state:change', @_loop
+
+      # Show
+      show: ->
+        @_grid.show()
+
+        # Attach keydown event
+        fn = _.throttle DRAW_INTERVAL, (e) =>
+          console.log e
+          @trigger 'key:pressed', e
+
+        window.onkeydown = fn
+
+        _window.onkeydown = fn for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
+        @_grid.elements.bricks.map ({_window}) ->
+          _window.onkeydown = fn
+
+        this
+
+      hide: ->
+        # Detach keydown event
+        window.onkeydown = null
+
+        _window.onkeydown = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
+        @_grid.elements.bricks.map ({_window}) ->
+          _window.onkeydown = null
+
+        @_grid.hide()
+        this
+
+Init
+----
+
+Set things up and start game.
+
+    init = ->
+      window.game = game = new Game
+
+    # Attach DOM load listener
+    window?.addEventListener 'load', init, false
+
 
 Exports
 -------
