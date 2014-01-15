@@ -40,7 +40,7 @@ To ascertain a particular corner in a list, follow clockwise starting from top-l
 
 Game constants:
 
-    DRAW_INTERVAL = 100 # ms
+    DRAW_INTERVAL = 50 # ms
 
 Helper Functions
 ----------------
@@ -473,6 +473,22 @@ straight line.
 
         this
 
+      # Add constraints
+      move: (n) ->
+        [x] = @position()
+        [vx] = @velocity()
+
+        # Left edge
+        if x <= 0 and vx < 0
+          return
+
+        # Right edge
+        else if x >= window.screen.availWidth and vx > 0
+          return
+
+        else
+          super n
+
 Class: Screen (Events)
 ----------------------
 
@@ -624,8 +640,8 @@ Grid manages the elements according to their context.
             left:   @adjustX center - ballHeight / 2
 
         # Set velocity
-        @elements.paddle.velocity [100, 0]
-        @elements.ball.velocity [100, 0]
+        @elements.paddle.velocity [250, 0]
+        @elements.ball.velocity [500, 0]
 
       # Change visibility
       show: -> element.show() for name, element of @elements
@@ -787,8 +803,7 @@ Class Game (StateMachine)
         @_grid.show()
 
         # Attach keydown event
-        fn = _.throttle DRAW_INTERVAL, (e) =>
-          console.log e
+        fn = _.throttle DRAW_INTERVAL / 2, (e) =>
           @trigger 'key:pressed', e
 
         window.onkeydown = fn
