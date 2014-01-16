@@ -454,18 +454,23 @@ instant and the methods to manipulate it.
       atEdge: ->
         [x, y] = @position()
         [w, h] = @size()
+        {availHeight, availWidth} = window.screen
 
         # Left edge
         if x <= 0
           [1, 0]
 
         # Right edge
-        else if x + w >= window.screen.availWidth
+        else if x + w >= availWidth
           [-1, 0]
 
         # Top edge
         else if y <= 0
           [0, 1]
+
+        # Bottom edge
+        else if y + h >= availHeight
+          [0, -1]
 
         else false
 
@@ -608,6 +613,13 @@ It also ascertains whether the `Ball` is touching a `Brick`.
         # Generate bricks
         @_generate props
 
+      # Number of bricks
+      len: ->
+        length = 0
+        length++ for brick in row for row in this
+
+        length
+
       # Map function
       map: (fn) ->
         fn? brick for brick in row for row in this
@@ -680,13 +692,13 @@ Grid manages the elements according to their context.
             left:   @adjustX center - ballHeight / 2
 
         # Set velocity
-        @elements.paddle.velocity [250, 0]
+        @elements.paddle.velocity [300, 0]
         @elements.ball.velocity _.vec([
           _.flip -1, 1
 
           # Between 30deg and 60deg
           -1 * _.random Math.sqrt(1/3), Math.sqrt(3), false # Return fraction
-        ]).multiply 500
+        ]).multiply 200
 
       # Change visibility
       show: -> element.show() for name, element of @elements
@@ -721,14 +733,15 @@ We use a state machine (fancy term for a simple concept) to manage game state.
 
         # Add events to machine
         for event of events
-          this[(event+'').toLowerCase()] ?= =>
+          this[(event+'').toLowerCase()] = =>
             # Get current state and find out if event allowed
             current = @_getState()
-            allowed = (next = @_blueprint[current]?[event])?
+            next = @_blueprint[current]?[event]
 
             # Set next state
-            if allowed
+            if next?
               @_setState next
+
             else
               @_throw "Invalid event '#{ event }' for current state '#{ current }'"
               false
@@ -755,11 +768,11 @@ We use a state machine (fancy term for a simple concept) to manage game state.
           @_addState state
 
         # Start
-        @trigger states[0].state if states[0]
+        @_setState states[0].state if states[0]
 
       # Override trigger to run machine events
       trigger: (event, args...) ->
-        unless stateEvent = this[event]? args...
+        unless this[event]?.apply this, args
           super event, args...
 
         this
@@ -771,35 +784,49 @@ Class Game (StateMachine)
       # -- Private --
       _moveBall: ->
         {ball, paddle, bricks} = @_grid.elements
+        {height, width} = bricks.brick
+        ch = Box::_getChromeHeight()
+
+        return @won() unless bricks.len()
+
+        # Points
         [__, __, b2, b1] = ball.corners()
         [p1, p2] = paddle.corners()
 
         [bT, bR, bB, bL] = ball.edgeCenters()
-        {width, height} = bricks.brick
-        ch = Box::_getChromeHeight()
+        [bTL, bTR, bBR, bBL] = ball.corners()
 
         # Bounce ball off walls and paddle
         if dir = ball.atEdge()
-          ball.bounce dir
+          if dir[Y] is -1
+            @lose()
+
+          else
+            ball.bounce dir
 
         else if b1[Y] >= p1[Y] and
-                b1[X] >= p1[X] and
-                b2[X] <= p2[X]
+                p1[X] <= b1[X] <= p2[X] and
+                p1[X] <= b2[X] <= p2[X]
 
           ball.bounce [0, -1]  # Up
 
+        # Brick collisions
+        # Top edge
         else if brick = bricks[Math.floor bT[Y] / (height + ch)]?[Math.floor bT[X] / width]
           ball.bounce [0, 1]
           bricks.remove brick.id
 
+        # Bottom edge
         else if brick = bricks[Math.floor bB[Y] / (height + ch)]?[Math.floor bB[X] / width]
           ball.bounce [0, -1]
           bricks.remove brick.id
 
+        # Right edge
         else if brick = bricks[Math.floor bR[Y] / (height + ch)]?[Math.floor bR[X] / width]
           ball.bounce [-1, 0]
           bricks.remove brick.id
 
+        # Left edge
         else if brick = bricks[Math.floor bL[Y] / (height + ch)]?[Math.floor bL[X] / width]
           ball.bounce [1, 0]
           bricks.remove brick.id
@@ -810,21 +837,46 @@ Class Game (StateMachine)
         this
 
       _controlGame: (key) ->
-        # Elements
-        {paddle} = @_grid.elements
+        state = @_getState()
 
         # Game controls
         switch key.keyCode
-          when 32 then @resume()              # space
-          when 80 then @pause()               # 'p'
-          when 27 then @stop()                # Esc
-          when 37 then paddle.left().move()   # <-
-          when 39 then paddle.right().move()  # ->
+          when 32  # space
+            if state is 'running' then @pause() else @resume()
+
+          when 83 then @display()  # 's'
+          when 27 then @stop()  # Esc
+          when 37  # <-
+            {paddle} = @_grid.elements
+            if state is 'running' then paddle.left().move() else @start()
+
+          when 39  # ->
+            {paddle} = @_grid.elements
+            if state is 'running' then paddle.right().move() else @start()
+
           else @trigger 'control:invalid'
 
       _loop: (current, next) ->
-       # if next running then draw and timeout to self
-       # else pause or stop
+        # Draw and undraw game elements on state change
+        switch next
+          when 'drawn'
+            @_grid = new Grid
+            @show()
+
+          when 'idle', 'won' then @hide()
+          when 'lost'
+            {ball} = @_grid.elements
+            ball.hide()
+
+        {paddle} = @_grid.elements
+
+        # Route actions
+        if @_getState() is 'running'
+          paddle.show()
+          _.defer => @_moveBall()
+
+          # Recurse
+          _.wait DRAW_INTERVAL, => @_loop()
 
       # -- Public --
       constructor: ->
@@ -832,6 +884,12 @@ Class Game (StateMachine)
         super [
           {
             state: 'idle'
+            events: {
+              display: 'drawn'
+            }
+          }
+          {
+            state: 'drawn'
             events: {
               start: 'running'
             }
@@ -855,19 +913,18 @@ Class Game (StateMachine)
           {
             state: 'won'
             events: {
-              reset: 'idle'
+              stop: 'idle'
             }
           }
           {
             state: 'lost'
             events: {
-              reset: 'idle'
+              stop: 'idle'
             }
           }
         ]
 
-        # Init game elements and controls
-        @_grid = new Grid
+        # Init game controls
         @on 'key:pressed', @_controlGame
 
         # Run game cycle on state change
@@ -881,8 +938,6 @@ Class Game (StateMachine)
         fn = _.throttle DRAW_INTERVAL, (e) =>
           @trigger 'key:pressed', e
 
-        window.onkeydown or= fn
-
         _window.onkeydown or= fn for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map (brick) ->
           brick?._window.onkeydown or= fn
@@ -891,8 +946,6 @@ Class Game (StateMachine)
 
       hide: ->
         # Detach keydown event
-        window?.onkeydown = null
-
         _window?.onkeydown = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map (brick) ->
           brick?._window?.onkeydown = null
@@ -906,7 +959,11 @@ Init
 Set things up and start game.
 
     init = ->
-      window.game = new Game
+      window.game = game = new Game
+
+      # Attach keydown event
+      window.onkeydown = _.throttle DRAW_INTERVAL, (e) ->
+        game.trigger 'key:pressed', e
 
     # Attach DOM load listener
     window?.addEventListener 'load', init, false
