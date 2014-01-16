@@ -425,15 +425,15 @@ instant and the methods to manipulate it.
 
       # Change direction of velocity components
       bounce: (dir) ->
-        # Reverse velocity
-        reverse = (v) -> -v
+        [dx, dy] = dir
+        [vx, vy] = @velocity()
 
         @velocity newVelocity = [
-          if dir[X] then reverse @_velocity[X] else @_velocity[X]
-          if dir[Y] then reverse @_velocity[Y] else @_velocity[Y]
-        ]...
+          if dx isnt 0 then dx * Math.abs vx else vx
+          if dy isnt 0 then dy * Math.abs vy else vy
+        ]
 
-        @trigger 'change', velocity: newVelocity
+        @trigger 'bounce', newVelocity
 
       # Override show to make sure paddle is correctly sized after it becomes visible
       show: (args...) ->
@@ -443,6 +443,24 @@ instant and the methods to manipulate it.
         @size @size()
 
         this
+
+      # Define constraints
+      atEdge: ->
+        [x, y] = @position()
+
+        # Left edge
+        if x <= 0
+          [1, 0]
+
+        # Right edge
+        else if x >= window.screen.availWidth
+          [-1, 0]
+
+        # Top edge
+        else if y <= 0
+          [0, -1]
+
+        else false
 
       # Move one step
       move: (n=1) ->
@@ -475,19 +493,21 @@ straight line.
 
       # Add constraints
       move: (n) ->
+        if @atEdge() then return else super n
+
+      atEdge: ->
         [x] = @position()
         [vx] = @velocity()
 
         # Left edge
         if x <= 0 and vx < 0
-          return
+          [1, 0]
 
         # Right edge
         else if x >= window.screen.availWidth and vx > 0
-          return
+          [1, 0]
 
-        else
-          super n
+        else false
 
 Class: Screen (Events)
 ----------------------
@@ -725,6 +745,11 @@ Class Game (StateMachine)
     class Game extends StateMachine
       # -- Private --
       _draw: ->
+        # Move ball
+        {ball} = @_grid.elements
+        ball.bounce dir if dir = ball.atEdge()
+        ball.move()
+
         # Draw elements
         @show()
         this
