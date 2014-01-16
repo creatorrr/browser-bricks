@@ -80,9 +80,6 @@ First, lets define some helper functions for the application.
         # Return serialized obj
         ("#{ k }#{ eq }#{ v }" for own k, v of obj).join sep
 
-      # Defer execution of function
-      defer: (fn, args...) -> setTimeout fn, 1, args...
-
       # Clone object
       clone: (obj) ->
         # If object extend
@@ -118,6 +115,11 @@ First, lets define some helper functions for the application.
           Math.floor (Math.random() * (max - min + 1)) + min
         else
           (Math.random() * (max - min)) + min
+
+      wait: (t, fn, args...) -> setTimeout fn, t, args...
+
+      # Defer execution of function
+      defer: (fn, args...) -> _.wait 1, fn, args...
 
       # Return function thats run only once
       once: (fn) ->
@@ -451,13 +453,14 @@ instant and the methods to manipulate it.
       # Define constraints
       atEdge: ->
         [x, y] = @position()
+        [w, h] = @size()
 
         # Left edge
         if x <= 0
           [1, 0]
 
         # Right edge
-        else if x >= window.screen.availWidth
+        else if x + w >= window.screen.availWidth
           [-1, 0]
 
         # Top edge
@@ -502,13 +505,14 @@ straight line.
       atEdge: ->
         [x] = @position()
         [vx] = @velocity()
+        [w] = @size()
 
         # Left edge
         if x <= 0 and vx < 0
           [1, 0]
 
         # Right edge
-        else if x >= window.screen.availWidth and vx > 0
+        else if x + w >= window.screen.availWidth and vx > 0
           [1, 0]
 
         else false
@@ -839,7 +843,7 @@ Class Game (StateMachine)
         @_grid.show()
 
         # Attach keydown event
-        fn = _.throttle DRAW_INTERVAL / 2, (e) =>
+        fn = _.throttle DRAW_INTERVAL, (e) =>
           @trigger 'key:pressed', e
 
         window.onkeydown or= fn
@@ -852,11 +856,11 @@ Class Game (StateMachine)
 
       hide: ->
         # Detach keydown event
-        window.onkeydown = null
+        window?.onkeydown = null
 
-        _window.onkeydown = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
+        _window?.onkeydown = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map ({_window}) ->
-          _window.onkeydown = null
+          _window?.onkeydown = null
 
         @_grid.hide()
         this
@@ -867,7 +871,7 @@ Init
 Set things up and start game.
 
     init = ->
-      window.game = game = new Game
+      window.game = new Game
 
     # Attach DOM load listener
     window?.addEventListener 'load', init, false
@@ -880,13 +884,4 @@ List of vars exported to global namespace.
 
     _.extend window,
       _: _
-      Events: Events
-      Box: Box
-      Brick: Brick
-      Ball: Ball
-      Paddle: Paddle
-      Screen: Screen
-      Grid: Grid
-      Bricks: Bricks
-      StateMachine: StateMachine
 
