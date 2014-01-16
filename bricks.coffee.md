@@ -103,14 +103,21 @@ First, lets define some helper functions for the application.
       # Square an integer
       sqr: (n) -> n*n
 
+      # Choose a random arg
+      flip: (args...) ->
+        args[_.random 0, args.length - 1]
+
       # Return random number between min & max
-      random: (min, max) ->
+      random: (min, max, int=true) ->
         if not max?
           # Only one arg passed
           max = min
           min = 0
 
-        Math.floor (Math.random() * (max - min + 1)) + min
+        if int
+          Math.floor (Math.random() * (max - min + 1)) + min
+        else
+          (Math.random() * (max - min)) + min
 
       # Return function thats run only once
       once: (fn) ->
@@ -661,7 +668,12 @@ Grid manages the elements according to their context.
 
         # Set velocity
         @elements.paddle.velocity [250, 0]
-        @elements.ball.velocity [500, 0]
+        @elements.ball.velocity _.vec([
+          1
+
+          # Between 30deg and 60deg
+          (_.random Math.sqrt(1/3), Math.sqrt(3)) * _.flip -1, 1
+        ]).multiply 500
 
       # Change visibility
       show: -> element.show() for name, element of @elements
