@@ -612,10 +612,22 @@ It also ascertains whether the `Ball` is touching a `Brick`.
       map: (fn) ->
         fn? brick for brick in row for row in this
 
+      # Find brick by test
+      find: (test) ->
+        found = null
+
+        for row, i in this
+          for brick, j in row
+            found = [i, j] if test brick
+
+        found
+
       # Remove elements based on search function
-      remove: (i, j) ->
+      remove: (id) ->
+        [i, j] = @find (brick) -> brick and brick.id is id
+
         # Hide brick
-        (brick = this[i][j]).hide()
+        (this[i][j]).hide()
 
         # Remove element
         this[i][j] = null
@@ -758,16 +770,39 @@ Class Game (StateMachine)
     class Game extends StateMachine
       # -- Private --
       _moveBall: ->
-        {ball, paddle} = @_grid.elements
+        {ball, paddle, bricks} = @_grid.elements
         [__, __, b2, b1] = ball.corners()
         [p1, p2] = paddle.corners()
+
+        [bT, bR, bB, bL] = ball.edgeCenters()
+        {width, height} = bricks.brick
+        ch = Box::_getChromeHeight()
 
         # Bounce ball off walls and paddle
         if dir = ball.atEdge()
           ball.bounce dir
 
-        else if b1[Y] >= p1[Y] and b1[X] >= p1[X] and b2[X] <= p2[X]
+        else if b1[Y] >= p1[Y] and
+                b1[X] >= p1[X] and
+                b2[X] <= p2[X]
+
           ball.bounce [0, -1]  # Up
+
+        else if brick = bricks[Math.floor bT[Y] / (height + ch)]?[Math.floor bT[X] / width]
+          ball.bounce [0, 1]
+          bricks.remove brick.id
+
+        else if brick = bricks[Math.floor bB[Y] / (height + ch)]?[Math.floor bB[X] / width]
+          ball.bounce [0, -1]
+          bricks.remove brick.id
+
+        else if brick = bricks[Math.floor bR[Y] / (height + ch)]?[Math.floor bR[X] / width]
+          ball.bounce [-1, 0]
+          bricks.remove brick.id
+
+        else if brick = bricks[Math.floor bL[Y] / (height + ch)]?[Math.floor bL[X] / width]
+          ball.bounce [1, 0]
+          bricks.remove brick.id
 
         # Move it
         ball.move()
@@ -849,8 +884,8 @@ Class Game (StateMachine)
         window.onkeydown or= fn
 
         _window.onkeydown or= fn for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
-        @_grid.elements.bricks.map ({_window}) ->
-          _window.onkeydown or= fn
+        @_grid.elements.bricks.map (brick) ->
+          brick?._window.onkeydown or= fn
 
         this
 
@@ -859,8 +894,8 @@ Class Game (StateMachine)
         window?.onkeydown = null
 
         _window?.onkeydown = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
-        @_grid.elements.bricks.map ({_window}) ->
-          _window?.onkeydown = null
+        @_grid.elements.bricks.map (brick) ->
+          brick?._window?.onkeydown = null
 
         @_grid.hide()
         this
