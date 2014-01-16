@@ -155,7 +155,7 @@ First, lets define some helper functions for the application.
             if context then fn.apply context, args else fn args...
 
           # Check if wait elapsed
-          if last && now < last + wait
+          if last and now < last + wait
             clearTimeout deferTimer if deferTimer
             deferTimer = setTimeout run, wait
 
@@ -353,10 +353,10 @@ All the objects will inherit from this class.
 
         # Return corners
         [
-          _.vec(position).add [0, -ch]        # tl
-          _.vec(position).add [width, -ch]    # tr
-          _.vec(position).add [width, height] # br
-          _.vec(position).add [0, height]     # bl
+          _.vec(position).add [0, -2 * ch]      # tl
+          _.vec(position).add [width, -2 * ch]  # tr
+          _.vec(position).add [width, height]   # br
+          _.vec(position).add [0, height]       # bl
         ]
 
       # Get edge centers
@@ -365,10 +365,10 @@ All the objects will inherit from this class.
 
         # Return center coordinates
         [
-          _.vec(tl, tr).center()
-          _.vec(tr, br).center()
-          _.vec(br, bl).center()
-          _.vec(bl, tl).center()
+          _.vec(tl, tr).center()  # T
+          _.vec(tr, br).center()  # R
+          _.vec(br, bl).center()  # B
+          _.vec(bl, tl).center()  # L
         ]
 
       # Get center
@@ -421,10 +421,7 @@ instant and the methods to manipulate it.
         # Set new velocity
         if vel then @_velocity = [
           vel[X] ? vx
-
-          # y velocity affects distance from top so inverted to preserve
-          # upward positive velocity direction.
-          -(vel[Y] ? vy)
+          vel[Y] ? vy
         ].map Math.ceil
 
         # Return velocity
@@ -465,7 +462,7 @@ instant and the methods to manipulate it.
 
         # Top edge
         else if y <= 0
-          [0, -1]
+          [0, 1]
 
         else false
 
@@ -669,10 +666,10 @@ Grid manages the elements according to their context.
         # Set velocity
         @elements.paddle.velocity [250, 0]
         @elements.ball.velocity _.vec([
-          1
+          _.flip -1, 1
 
           # Between 30deg and 60deg
-          (_.random Math.sqrt(1/3), Math.sqrt(3)) * _.flip -1, 1
+          -1 * _.random Math.sqrt(1/3), Math.sqrt(3), false # Return fraction
         ]).multiply 500
 
       # Change visibility
@@ -756,19 +753,21 @@ Class Game (StateMachine)
 
     class Game extends StateMachine
       # -- Private --
-      _draw: ->
-        # Move ball
-        {ball} = @_grid.elements
-        ball.bounce dir if dir = ball.atEdge()
+      _moveBall: ->
+        {ball, paddle} = @_grid.elements
+        [__, __, b2, b1] = ball.corners()
+        [p1, p2] = paddle.corners()
+
+        # Bounce ball off walls and paddle
+        if dir = ball.atEdge()
+          ball.bounce dir
+
+        else if b1[Y] >= p1[Y] and b1[X] >= p1[X] and b2[X] <= p2[X]
+          ball.bounce [0, -1]  # Up
+
+        # Move it
         ball.move()
 
-        # Draw elements
-        @show()
-        this
-
-      _erase: ->
-        # Remove elements
-        @hide()
         this
 
       _controlGame: (key) ->
@@ -843,11 +842,11 @@ Class Game (StateMachine)
         fn = _.throttle DRAW_INTERVAL / 2, (e) =>
           @trigger 'key:pressed', e
 
-        window.onkeydown = fn
+        window.onkeydown or= fn
 
-        _window.onkeydown = fn for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
+        _window.onkeydown or= fn for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map ({_window}) ->
-          _window.onkeydown = fn
+          _window.onkeydown or= fn
 
         this
 
