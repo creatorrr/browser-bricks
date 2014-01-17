@@ -41,6 +41,8 @@ To ascertain a particular corner in a list, follow clockwise starting from top-l
 Game constants:
 
     DRAW_INTERVAL = 50 # ms
+    PADDLE_VELOCITY = 500
+    BALL_VELOCITY = 250
 
 Helper Functions
 ----------------
@@ -117,7 +119,7 @@ First, lets define some helper functions for the application.
       last: (array) -> array[array.length-1]
 
       # Square an integer
-      sqr: (n) -> n*n
+      sqr: (n) -> n * n
 
       # Choose a random arg
       flip: (args...) ->
@@ -635,9 +637,13 @@ It also ascertains whether the `Ball` is touching a `Brick`.
       # Number of bricks
       len: ->
         length = 0
-        length++ for brick in row for row in this
+        length++ for brick in row when brick? for row in this
 
         length
+
+      # Max bricks
+      max: _.once ->
+        (row.length for row in this).reduce ((t, l) -> t+l), 0
 
       # Map function
       map: (fn) ->
@@ -711,13 +717,13 @@ Grid manages the elements according to their context.
             left:   @adjustX center - ballHeight / 2
 
         # Set velocity
-        @elements.paddle.velocity [500, 0]
+        @elements.paddle.velocity [PADDLE_VELOCITY, 0]
         @elements.ball.velocity _.vec([
           _.flip -1, 1
 
           # Between 30deg and 60deg
           -1 * _.random Math.sqrt(1/3), Math.sqrt(3), false # Return fraction
-        ]).multiply 300
+        ]).multiply BALL_VELOCITY
 
       # Change visibility
       show: -> element.show() for name, element of @elements
@@ -805,6 +811,21 @@ Class Game (StateMachine)
 
     class Game extends StateMachine
       # -- Private --
+      _incDifficulty: ->
+        {ball, bricks} = @_grid.elements
+
+        base = ball.velocity()
+        prev = @_ballVelocity
+
+        # Calc new difficulty
+        @_difficulty = _.sqr 2 - bricks.len() / bricks.max()
+        @_ballVelocity = next = BALL_VELOCITY * @_difficulty
+
+        # Set new velocity
+        ball.velocity _.vec(
+          _.vec(base).multiply 1/prev
+        ).multiply next
+
       _moveBall: ->
         {ball, paddle, bricks} = @_grid.elements
         {height, width} = bricks.brick
@@ -889,10 +910,18 @@ Class Game (StateMachine)
         # Draw and undraw game elements on state change
         switch next
           when 'drawn'
+            # Init game elements
+            @_difficulty = 1
+            @_ballVelocity = BALL_VELOCITY
             @_grid = new Grid
+
+            # Show grid
             @show()
 
-          when 'idle', 'won' then @hide()
+          when 'idle', 'won'
+            @hide()
+            return @_grid = null
+
           when 'lost'
             {ball} = @_grid.elements
             ball.hide()
@@ -960,6 +989,9 @@ Class Game (StateMachine)
         # Run game cycle on state change
         @on 'state:change', @_loop
 
+        # Increase difficulty
+        @on 'bounce:brick', @_incDifficulty
+
       # Show
       show: ->
         @_grid.show()
@@ -996,7 +1028,7 @@ Set things up and start game.
         game.trigger 'key:pressed', e
 
       # Log errors
-      game.on 'error', (args...) -> console.log args...
+      game.on 'error', ({message}) -> console.log "Error: #{ message }"
 
     # Attach DOM load listener
     window?.addEventListener 'load', init, false
