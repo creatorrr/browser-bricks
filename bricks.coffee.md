@@ -65,6 +65,25 @@ First, lets define some helper functions for the application.
 
         result
 
+      pluck: (arr, prop) ->
+        (obj[prop] for obj in arr)
+
+      # Return array with unique elements
+      uniq: (arr) ->
+        seen = new Set
+
+        for e in arr when not seen.has e
+          seen.add e
+          e
+
+      # 1-level flatten
+      flatten: (arr) ->
+        a = []
+        for e in arr
+          if e.length then a = a.concat e else a.push e
+
+        a
+
       # UUID function (Copied shamelessly from https://gist.github.com/bmc/1893440)
       uuid: ->
         'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace /[xy]/g, (c) ->
@@ -692,13 +711,13 @@ Grid manages the elements according to their context.
             left:   @adjustX center - ballHeight / 2
 
         # Set velocity
-        @elements.paddle.velocity [300, 0]
+        @elements.paddle.velocity [500, 0]
         @elements.ball.velocity _.vec([
           _.flip -1, 1
 
           # Between 30deg and 60deg
           -1 * _.random Math.sqrt(1/3), Math.sqrt(3), false # Return fraction
-        ]).multiply 200
+        ]).multiply 300
 
       # Change visibility
       show: -> element.show() for name, element of @elements
@@ -727,26 +746,29 @@ We use a state machine (fancy term for a simple concept) to manage game state.
         @trigger 'error', error
         error
 
-      _addEvents: (state, events) ->
+      _addStates: (states) ->
         # Add to blueprint
-        (@_blueprint or= {})[state] = events
+        for {state, events} in states
+          @_blueprint[state] = events
 
         # Add events to machine
-        for event of events
-          this[(event+'').toLowerCase()] = =>
-            # Get current state and find out if event allowed
-            current = @_getState()
-            next = @_blueprint[current]?[event]
+        for event in _.uniq _.flatten (_.pluck states, 'events').map Object.keys
+          this[event] = do =>
+            e = event
+            => @_triggerEvent e
 
-            # Set next state
-            if next?
-              @_setState next
+      _triggerEvent: (event) ->
+        # Get current state and find out if event allowed
+        current = @_getState()
+        next = @_blueprint[current]?[event]
 
-            else
-              @_throw "Invalid event '#{ event }' for current state '#{ current }'"
-              false
+        # Set next state
+        if next?
+          @_setState next
 
-      _addState:({state, events}) -> @_addEvents state, events
+        else
+          @_throw "Invalid event '#{ event }' for current state '#{ current }'"
+          false
 
       # -- Public --
       constructor: (states) ->
@@ -763,9 +785,10 @@ We use a state machine (fancy term for a simple concept) to manage game state.
 
         super
 
+        @_blueprint = {}
+
         # Add events for corresponding states
-        for state in states
-          @_addState state
+        @_addStates states
 
         # Start
         @_setState states[0].state if states[0]
@@ -854,7 +877,7 @@ Class Game (StateMachine)
             {paddle} = @_grid.elements
             if state is 'running' then paddle.right().move() else @start()
 
-          else @trigger 'control:invalid'
+          else @trigger 'error', new Error 'Invalid control'
 
       _loop: (current, next) ->
         # Draw and undraw game elements on state change
@@ -892,6 +915,7 @@ Class Game (StateMachine)
             state: 'drawn'
             events: {
               start: 'running'
+              stop: 'idle'
             }
           }
           {
@@ -964,6 +988,9 @@ Set things up and start game.
       # Attach keydown event
       window.onkeydown = _.throttle DRAW_INTERVAL, (e) ->
         game.trigger 'key:pressed', e
+
+      # Log errors
+      game.on 'error', (args...) -> console.log args...
 
     # Attach DOM load listener
     window?.addEventListener 'load', init, false
