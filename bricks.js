@@ -931,21 +931,27 @@
           this.lose();
         } else {
           ball.bounce(dir);
+          this.trigger('bounce:wall', this);
         }
       } else if (b1[Y] >= p1[Y] && (p1[X] <= (_ref8 = b1[X]) && _ref8 <= p2[X]) && (p1[X] <= (_ref9 = b2[X]) && _ref9 <= p2[X])) {
         ball.bounce([0, -1]);
+        this.trigger('bounce:paddle', this);
       } else if (brick = (_ref10 = bricks[Math.floor(bT[Y] / (height + ch))]) != null ? _ref10[Math.floor(bT[X] / width)] : void 0) {
         ball.bounce([0, 1]);
         bricks.remove(brick.id);
+        this.trigger('bounce:brick', this);
       } else if (brick = (_ref11 = bricks[Math.floor(bB[Y] / (height + ch))]) != null ? _ref11[Math.floor(bB[X] / width)] : void 0) {
         ball.bounce([0, -1]);
         bricks.remove(brick.id);
+        this.trigger('bounce:brick', this);
       } else if (brick = (_ref12 = bricks[Math.floor(bR[Y] / (height + ch))]) != null ? _ref12[Math.floor(bR[X] / width)] : void 0) {
         ball.bounce([-1, 0]);
         bricks.remove(brick.id);
+        this.trigger('bounce:brick', this);
       } else if (brick = (_ref13 = bricks[Math.floor(bL[Y] / (height + ch))]) != null ? _ref13[Math.floor(bL[X] / width)] : void 0) {
         ball.bounce([1, 0]);
         bricks.remove(brick.id);
+        this.trigger('bounce:brick', this);
       }
       ball.move();
       return this;

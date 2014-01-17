@@ -826,33 +826,39 @@ Class Game (StateMachine)
 
           else
             ball.bounce dir
+            @trigger 'bounce:wall', this
 
         else if b1[Y] >= p1[Y] and
                 p1[X] <= b1[X] <= p2[X] and
                 p1[X] <= b2[X] <= p2[X]
 
           ball.bounce [0, -1]  # Up
+          @trigger 'bounce:paddle', this
 
         # Brick collisions
         # Top edge
         else if brick = bricks[Math.floor bT[Y] / (height + ch)]?[Math.floor bT[X] / width]
           ball.bounce [0, 1]
           bricks.remove brick.id
+          @trigger 'bounce:brick', this
 
         # Bottom edge
         else if brick = bricks[Math.floor bB[Y] / (height + ch)]?[Math.floor bB[X] / width]
           ball.bounce [0, -1]
           bricks.remove brick.id
+          @trigger 'bounce:brick', this
 
         # Right edge
         else if brick = bricks[Math.floor bR[Y] / (height + ch)]?[Math.floor bR[X] / width]
           ball.bounce [-1, 0]
           bricks.remove brick.id
+          @trigger 'bounce:brick', this
 
         # Left edge
         else if brick = bricks[Math.floor bL[Y] / (height + ch)]?[Math.floor bL[X] / width]
           ball.bounce [1, 0]
           bricks.remove brick.id
+          @trigger 'bounce:brick', this
 
         # Move it
         ball.move()
