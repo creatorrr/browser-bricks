@@ -2,7 +2,10 @@
   "name": "bricks",
   "version": "0.0.0",
   "description": "browser-pong style breakout game",
-  "main": "bricks.coffee.md",
+  "main": "bricks.js",
+  "scripts": {
+    "compile": "./node_modules/coffee-script/bin/coffee -mc ."
+  },
   "devDependencies": {
     "coffee-script": "*"
   },
