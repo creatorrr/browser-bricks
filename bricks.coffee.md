@@ -761,7 +761,10 @@ We use a state machine (fancy term for a simple concept) to manage game state.
         for event in _.uniq _.flatten (_.pluck states, 'events').map Object.keys
           this[event] = do =>
             e = event
-            => @_triggerEvent e
+
+            return =>
+              @_triggerEvent e
+              this
 
       _triggerEvent: (event) ->
         # Get current state and find out if event allowed
@@ -817,7 +820,7 @@ Class Game (StateMachine)
         base = ball.velocity()
         prev = @_ballVelocity
 
-        # Calc new difficulty
+        # Calc new difficulty (exponential growth)
         @_difficulty = _.sqr 2 - bricks.len() / bricks.max()
         @_ballVelocity = next = BALL_VELOCITY * @_difficulty
 
@@ -894,7 +897,7 @@ Class Game (StateMachine)
           when 32  # space
             if state is 'running' then @pause() else @resume()
 
-          when 83 then @display()  # 's'
+          when 83 then @stop().display()  # 's'
           when 27 then @stop()  # Esc
           when 37  # <-
             {paddle} = @_grid.elements
@@ -973,12 +976,14 @@ Class Game (StateMachine)
             state: 'won'
             events: {
               stop: 'idle'
+              display: 'drawn'
             }
           }
           {
             state: 'lost'
             events: {
               stop: 'idle'
+              display: 'drawn'
             }
           }
         ]

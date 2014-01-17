@@ -891,7 +891,8 @@
           var e;
           e = event;
           return function() {
-            return _this._triggerEvent(e);
+            _this._triggerEvent(e);
+            return _this;
           };
         })());
       }
@@ -1000,7 +1001,7 @@
           }
           break;
         case 83:
-          return this.display();
+          return this.stop().display();
         case 27:
           return this.stop();
         case 37:
@@ -1084,12 +1085,14 @@
         }, {
           state: 'won',
           events: {
-            stop: 'idle'
+            stop: 'idle',
+            display: 'drawn'
           }
         }, {
           state: 'lost',
           events: {
-            stop: 'idle'
+            stop: 'idle',
+            display: 'drawn'
           }
         }
       ]);
