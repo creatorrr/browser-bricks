@@ -44,6 +44,10 @@ Game constants:
     PADDLE_VELOCITY = 500
     BALL_VELOCITY = 250
 
+Host name:
+
+    HOST_NAME = 'http://creatorrr.github.io/bricks'
+
 Helper Functions
 ----------------
 
@@ -715,7 +719,7 @@ Grid manages the elements according to their context.
             columns: 10
 
             template: -> """
-              <body style="background: black"></body>
+              <body style="background: url('#{ HOST_NAME }/img/bricks.png');"></body>
             """
 
           paddle: new Paddle
@@ -725,7 +729,7 @@ Grid manages the elements according to their context.
             left:   (center = width / 2) - paddleWidth / 2
 
             template: -> """
-              <body style="background: brown"></body>
+              <body style="background: url('#{ HOST_NAME }/img/pattern.png');"></body>
             """
 
           ball: new Ball
@@ -737,7 +741,15 @@ Grid manages the elements according to their context.
             left:   center - ballHeight / 2
 
             template: -> """
-              <body style="background: purple"></body>
+              <body style="background: black; overflow: hidden;">
+                <div style="background: white;
+                            height: 80vh;
+                            width: 80vh;
+                            margin: 10vh auto;
+                            border-radius: 50%;">
+                  &nbsp;
+                </div>
+              </body>
             """
 
         # Set velocity
@@ -927,11 +939,17 @@ Class Game (StateMachine)
           when 27 then @stop()  # Esc
           when 37  # <-
             {paddle} = @_grid?.elements
-            if state is 'running' then paddle.left().move() else @start()
+            switch state
+              when 'running' then paddle.left().move()
+              when 'paused' then @resume()
+              else @start()
 
           when 39  # ->
             {paddle} = @_grid?.elements
-            if state is 'running' then paddle.right().move() else @start()
+            switch state
+              when 'running' then paddle.right().move()
+              when 'paused' then @resume()
+              else @start()
 
           else @trigger 'error', new Error 'Invalid control'
 
@@ -1085,9 +1103,8 @@ Set things up and start game.
           k.classList.add 'pressed'
 
       game.on 'key:up', ({keyCode}) ->
-        # Display keypress
-        if k = window.document.querySelector "#k#{ keyCode }"
-          k.classList.remove 'pressed'
+        # Clear previous
+        e.classList.remove 'pressed' for e in window.document.querySelectorAll 'kbd'
 
       # Log errors
       game.on 'error', ({message}) -> console.log "Error: #{ message }"
