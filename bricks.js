@@ -171,6 +171,15 @@
       fn = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
       return _.wait.apply(_, [1, fn].concat(__slice.call(args)));
     },
+    bind: function() {
+      var args, ctx, fn;
+      fn = arguments[0], ctx = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+      return function() {
+        var extra;
+        extra = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        return fn.apply(ctx, args.concat(extra));
+      };
+    },
     once: function(fn) {
       var mem, ran;
       ran = false;
@@ -963,6 +972,12 @@
       return ball.velocity(_.vec(_.vec(base).multiply(1 / prev)).multiply(next));
     };
 
+    Game.prototype._playSound = function(name) {
+      var sound;
+      sound = new Audio("/sounds/" + name + ".wav");
+      return sound.play();
+    };
+
     Game.prototype._moveBall = function() {
       var b1, b2, bB, bL, bR, bT, ball, brick, bricks, ch, dir, height, p1, p2, paddle, width, __, _ref10, _ref11, _ref12, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
       _ref2 = this._grid.elements, ball = _ref2.ball, paddle = _ref2.paddle, bricks = _ref2.bricks;
@@ -1042,7 +1057,7 @@
     };
 
     Game.prototype._loop = function(current, next) {
-      var ball, paddle,
+      var ball, _ref2,
         _this = this;
       switch (next) {
         case 'drawn':
@@ -1059,9 +1074,10 @@
           ball = this._grid.elements.ball;
           ball.hide();
       }
-      paddle = this._grid.elements.paddle;
       if (this._getState() === 'running') {
-        paddle.show();
+        if ((_ref2 = this._grid) != null) {
+          _ref2.elements.paddle.show();
+        }
         _.defer(function() {
           return _this._moveBall();
         });
@@ -1072,6 +1088,7 @@
     };
 
     function Game() {
+      var _this = this;
       Game.__super__.constructor.call(this, [
         {
           state: 'idle',
@@ -1115,6 +1132,14 @@
       this.on('key:pressed', this._controlGame);
       this.on('state:change', this._loop);
       this.on('bounce:brick', this._incDifficulty);
+      this.on('bounce:brick', _.bind(this._playSound, this, 'brick'));
+      this.on('bounce:wall', _.bind(this._playSound, this, 'wall'));
+      this.on('bounce:paddle', _.bind(this._playSound, this, 'paddle'));
+      this.on('state:change', function(__, next) {
+        if (next === 'won' || next === 'lost') {
+          return _this._playSound(next);
+        }
+      });
     }
 
     Game.prototype.show = function() {

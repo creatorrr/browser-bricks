@@ -142,6 +142,11 @@ First, lets define some helper functions for the application.
       # Defer execution of function
       defer: (fn, args...) -> _.wait 1, fn, args...
 
+      # Bind function to context and arguments
+      bind: (fn, ctx, args...) ->
+        (extra...) ->
+          fn.apply ctx, args.concat extra
+
       # Return function thats run only once
       once: (fn) ->
         ran = false
@@ -848,6 +853,10 @@ Class Game (StateMachine)
           _.vec(base).multiply 1/prev
         ).multiply next
 
+      _playSound: (name) ->
+        sound = new Audio "/sounds/#{ name }.wav"
+        sound.play()
+
       _moveBall: ->
         {ball, paddle, bricks} = @_grid.elements
         {height, width} = bricks.brick
@@ -946,11 +955,9 @@ Class Game (StateMachine)
             {ball} = @_grid.elements
             ball.hide()
 
-        {paddle} = @_grid.elements
-
         # Route actions
         if @_getState() is 'running'
-          paddle.show()
+          @_grid?.elements.paddle.show()
           _.defer => @_moveBall()
 
           # Recurse
@@ -1013,6 +1020,14 @@ Class Game (StateMachine)
 
         # Increase difficulty
         @on 'bounce:brick', @_incDifficulty
+
+        # Play sounds
+        @on 'bounce:brick', _.bind @_playSound, this, 'brick'
+        @on 'bounce:wall', _.bind @_playSound, this, 'wall'
+        @on 'bounce:paddle', _.bind @_playSound, this, 'paddle'
+
+        @on 'state:change', (__, next) =>
+          @_playSound next if next in ['won', 'lost']
 
       # Show
       show: ->
