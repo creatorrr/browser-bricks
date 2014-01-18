@@ -328,11 +328,10 @@
     };
 
     Box.prototype._getChromeHeight = _.once(function() {
-      var body, chrome, taskbar, total;
-      total = window.screen.availHeight;
-      taskbar = window.screen.availTop;
-      body = (document.querySelector('body')).scrollHeight;
-      return chrome = total - taskbar - body;
+      var body, chrome, total;
+      total = window.screen.height;
+      body = window.innerHeight;
+      return chrome = total - body;
     });
 
     function Box(settings) {
@@ -421,7 +420,7 @@
       _ref = this.size(), width = _ref[0], height = _ref[1];
       position = this.position();
       ch = this._getChromeHeight();
-      return [_.vec(position).add([0, -2 * ch]), _.vec(position).add([width, -2 * ch]), _.vec(position).add([width, height]), _.vec(position).add([0, height])];
+      return [_.vec(position).add([0, -ch]), _.vec(position).add([width, -ch]), _.vec(position).add([width, height]), _.vec(position).add([0, height])];
     };
 
     Box.prototype.edgeCenters = function() {
@@ -581,81 +580,14 @@
 
   })(Ball);
 
-  Screen = (function(_super) {
-    __extends(Screen, _super);
-
-    Screen.prototype._screen = typeof window !== "undefined" && window !== null ? window.screen : void 0;
-
-    Screen.prototype._offset = [0, 0];
-
-    Screen.prototype._getDefault = function() {
-      return {
-        offset: this.constructor.prototype._offset
-      };
-    };
-
-    function Screen() {
-      this._offset = _.clone(this._offset);
-      Screen.__super__.constructor.apply(this, arguments);
-    }
-
-    Screen.prototype.height = function() {
-      return this._screen.availHeight - 2 * this.offset()[Y];
-    };
-
-    Screen.prototype.width = function() {
-      return this._screen.availWidth - 2 * this.offset()[X];
-    };
-
-    Screen.prototype.top = function() {
-      return this.offset()[Y];
-    };
-
-    Screen.prototype.left = function() {
-      return this.offset()[X];
-    };
-
-    Screen.prototype.offset = function() {
-      var args, ox, oy, _ref2, _ref3, _ref4;
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      _ref2 = this._getDefault().offset, ox = _ref2[0], oy = _ref2[1];
-      if (args.length) {
-        this._offset = [(_ref3 = args[X]) != null ? _ref3 : ox, (_ref4 = args[Y]) != null ? _ref4 : oy];
-      }
-      return _.clone(this._offset);
-    };
-
-    Screen.prototype.adjust = function(x, y) {
-      var xo, yo, _ref2;
-      if (x == null) {
-        x = 0;
-      }
-      if (y == null) {
-        y = 0;
-      }
-      _ref2 = this.offset(), xo = _ref2[0], yo = _ref2[1];
-      return [x + xo, y + yo];
-    };
-
-    Screen.prototype.adjustX = function(x) {
-      return (this.adjust(x, 0))[X];
-    };
-
-    Screen.prototype.adjustY = function(y) {
-      return (this.adjust(0, y))[Y];
-    };
-
-    return Screen;
-
-  })(Events);
-
   Bricks = (function(_super) {
     __extends(Bricks, _super);
 
     Bricks.prototype._generate = function(_arg) {
-      var ch, column, height, row, width, _i, _ref2, _results;
+      var ch, column, height, row, vt, width, _i, _ref2, _results;
       this.columns = _arg.columns, this.rows = _arg.rows;
       ch = Box.prototype._getChromeHeight();
+      vt = window.screen.availTop;
       this.brick = {
         height: height = Math.ceil(this.height / this.rows),
         width: width = Math.ceil(this.width / this.columns)
@@ -670,7 +602,7 @@
             _results1.push(this[row].push(new Brick({
               height: height,
               width: width,
-              top: (height + 2 * ch) * row,
+              top: ((height + ch) * row) + vt,
               left: width * column
             })));
           }
@@ -793,6 +725,74 @@
 
   })(Array);
 
+  Screen = (function(_super) {
+    __extends(Screen, _super);
+
+    Screen.prototype._screen = typeof window !== "undefined" && window !== null ? window.screen : void 0;
+
+    Screen.prototype._offset = [0, 0];
+
+    Screen.prototype._getDefault = function() {
+      return {
+        offset: this.constructor.prototype._offset
+      };
+    };
+
+    function Screen() {
+      this._offset = _.clone(this._offset);
+      Screen.__super__.constructor.apply(this, arguments);
+    }
+
+    Screen.prototype.height = function() {
+      return this._screen.availHeight - 2 * this.offset()[Y];
+    };
+
+    Screen.prototype.width = function() {
+      return this._screen.availWidth - 2 * this.offset()[X];
+    };
+
+    Screen.prototype.top = function() {
+      return this.offset()[Y];
+    };
+
+    Screen.prototype.left = function() {
+      return this.offset()[X];
+    };
+
+    Screen.prototype.offset = function() {
+      var args, ox, oy, _ref2, _ref3, _ref4;
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      _ref2 = this._getDefault().offset, ox = _ref2[0], oy = _ref2[1];
+      if (args.length) {
+        this._offset = [(_ref3 = args[X]) != null ? _ref3 : ox, (_ref4 = args[Y]) != null ? _ref4 : oy];
+      }
+      return _.clone(this._offset);
+    };
+
+    Screen.prototype.adjust = function(x, y) {
+      var xo, yo, _ref2;
+      if (x == null) {
+        x = 0;
+      }
+      if (y == null) {
+        y = 0;
+      }
+      _ref2 = this.offset(), xo = _ref2[0], yo = _ref2[1];
+      return [x + xo, y + yo];
+    };
+
+    Screen.prototype.adjustX = function(x) {
+      return (this.adjust(x, 0))[X];
+    };
+
+    Screen.prototype.adjustY = function(y) {
+      return (this.adjust(0, y))[Y];
+    };
+
+    return Screen;
+
+  })(Events);
+
   Grid = (function(_super) {
     __extends(Grid, _super);
 
@@ -811,14 +811,14 @@
         paddle: new Paddle({
           height: paddleHeight = 0.02 * height,
           width: paddleWidth = 0.3 * width,
-          top: this.adjustY(paddleTop = height - paddleHeight),
-          left: this.adjustX((center = width / 2) - paddleWidth / 2)
+          top: paddleTop = height - paddleHeight,
+          left: (center = width / 2) - paddleWidth / 2
         }),
         ball: new Ball({
           height: ballHeight = 0.1 * height,
           width: ballHeight,
-          top: this.adjustY(paddleTop - ballHeight - 2 * ch),
-          left: this.adjustX(center - ballHeight / 2)
+          top: paddleTop - ballHeight - ch,
+          left: center - ballHeight / 2
         })
       };
       this.elements.paddle.velocity([PADDLE_VELOCITY, 0]);

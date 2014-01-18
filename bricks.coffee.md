@@ -280,11 +280,10 @@ All the objects will inherit from this class.
 
       # FIXME: Hacky way to find height of chrome
       _getChromeHeight: _.once ->
-        total = window.screen.availHeight
-        taskbar = window.screen.availTop
-        body = (document.querySelector 'body').scrollHeight
+        total = window.screen.height
+        body = window.innerHeight
 
-        chrome = total - taskbar - body
+        chrome = total - body
 
       # -- Public --
       constructor: (settings={}) ->
@@ -376,8 +375,8 @@ All the objects will inherit from this class.
 
         # Return corners
         [
-          _.vec(position).add [0, -2 * ch]      # tl
-          _.vec(position).add [width, -2 * ch]  # tr
+          _.vec(position).add [0, -ch]          # tl
+          _.vec(position).add [width, -ch]      # tr
           _.vec(position).add [width, height]   # br
           _.vec(position).add [0, height]       # bl
         ]
@@ -543,55 +542,6 @@ straight line.
 
         else false
 
-Class: Screen (Events)
-----------------------
-
-This class is supposed to keep track of screen dimensions, offsets etc.
-
-    class Screen extends Events
-      # -- Private --
-      _screen: window?.screen
-      _offset: [0, 0]
-      _getDefault: -> offset: @constructor::_offset
-
-      # -- Public --
-      constructor: ->
-        # Copy offset
-        @_offset = _.clone @_offset
-        super
-
-      # Get available screen coordinates
-      height: -> @_screen.availHeight - 2*@offset()[Y]
-      width: -> @_screen.availWidth - 2*@offset()[X]
-      top: -> @offset()[Y]
-      left: -> @offset()[X]
-
-      # Set or retrieve offset
-      offset: (args...) ->
-        [ox, oy] = @_getDefault().offset
-
-        if args.length then @_offset = [
-          args[X] ? ox  # offsetX
-          args[Y] ? oy  # offsetY
-        ]
-
-        # Return offset
-        _.clone @_offset
-
-      # Adjust coords
-      adjust: (x=0, y=0) ->
-        # Get offset
-        [xo, yo] = @offset()
-
-        # Return adjusted value
-        [
-          x + xo
-          y + yo
-        ]
-
-      adjustX: (x) -> (@adjust x, 0)[X]
-      adjustY: (y) -> (@adjust 0, y)[Y]
-
 Class: Bricks (Array)
 ---------------------
 
@@ -604,6 +554,7 @@ It also ascertains whether the `Ball` is touching a `Brick`.
       _generate: ({@columns, @rows}) ->
         # Viewport dimensions
         ch = Box::_getChromeHeight()
+        vt = window.screen.availTop
 
         # Brick dimensions
         @brick =
@@ -618,7 +569,7 @@ It also ascertains whether the `Ball` is touching a `Brick`.
             this[row].push new Brick
               height: height
               width: width
-              top: (height + 2 * ch) * row
+              top: ((height + ch) * row) + vt
               left: width * column
 
       # -- Public --
@@ -681,6 +632,55 @@ It also ascertains whether the `Ball` is touching a `Brick`.
         brick?.show() for brick in row for row in this
         this
 
+Class: Screen (Events)
+----------------------
+
+This class is supposed to keep track of screen dimensions, offsets etc.
+
+    class Screen extends Events
+      # -- Private --
+      _screen: window?.screen
+      _offset: [0, 0]
+      _getDefault: -> offset: @constructor::_offset
+
+      # -- Public --
+      constructor: ->
+        # Copy offset
+        @_offset = _.clone @_offset
+        super
+
+      # Get available screen coordinates
+      height: -> @_screen.availHeight - 2*@offset()[Y]
+      width: -> @_screen.availWidth - 2*@offset()[X]
+      top: -> @offset()[Y]
+      left: -> @offset()[X]
+
+      # Set or retrieve offset
+      offset: (args...) ->
+        [ox, oy] = @_getDefault().offset
+
+        if args.length then @_offset = [
+          args[X] ? ox  # offsetX
+          args[Y] ? oy  # offsetY
+        ]
+
+        # Return offset
+        _.clone @_offset
+
+      # Adjust coords
+      adjust: (x=0, y=0) ->
+        # Get offset
+        [xo, yo] = @offset()
+
+        # Return adjusted value
+        [
+          x + xo
+          y + yo
+        ]
+
+      adjustX: (x) -> (@adjust x, 0)[X]
+      adjustY: (y) -> (@adjust 0, y)[Y]
+
 Class: Grid (Screen)
 --------------------
 
@@ -705,16 +705,16 @@ Grid manages the elements according to their context.
           paddle: new Paddle
             height: paddleHeight = 0.02 * height
             width:  paddleWidth = 0.3 * width
-            top:    @adjustY paddleTop = height - paddleHeight  # Place at bottom
-            left:   @adjustX (center = width / 2) - paddleWidth / 2
+            top:    paddleTop = height - paddleHeight  # Place at bottom
+            left:   (center = width / 2) - paddleWidth / 2
 
           ball: new Ball
             height: ballHeight = 0.1 * height
             width:  ballHeight
 
             # Place ball on the paddle
-            top:    @adjustY paddleTop - ballHeight - 2 * ch
-            left:   @adjustX center - ballHeight / 2
+            top:    paddleTop - ballHeight - ch
+            left:   center - ballHeight / 2
 
         # Set velocity
         @elements.paddle.velocity [PADDLE_VELOCITY, 0]
