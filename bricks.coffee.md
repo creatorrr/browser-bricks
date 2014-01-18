@@ -371,12 +371,11 @@ All the objects will inherit from this class.
       corners: ->
         [width, height] = @size()
         position = @position()
-        ch = @_getChromeHeight()
 
         # Return corners
         [
-          _.vec(position).add [0, -ch]          # tl
-          _.vec(position).add [width, -ch]      # tr
+          _.vec(position).add [0, 0]            # tl
+          _.vec(position).add [width, 0]        # tr
           _.vec(position).add [width, height]   # br
           _.vec(position).add [0, height]       # bl
         ]
@@ -475,6 +474,7 @@ instant and the methods to manipulate it.
         [x, y] = @position()
         [w, h] = @size()
         {availHeight, availWidth} = window.screen
+        ch = @_getChromeHeight()
 
         # Left edge
         if x <= 0
@@ -494,7 +494,7 @@ instant and the methods to manipulate it.
 
         else false
 
-      # Move one step
+      # Move n steps
       move: (n=1) ->
         _.times n, =>
           change = _.vec(@velocity()).multiply DRAW_INTERVAL / 1000
@@ -703,7 +703,7 @@ Grid manages the elements according to their context.
             columns: 10
 
           paddle: new Paddle
-            height: paddleHeight = 0.02 * height
+            height: paddleHeight = 0.1 * height
             width:  paddleWidth = 0.3 * width
             top:    paddleTop = height - paddleHeight  # Place at bottom
             left:   (center = width / 2) - paddleWidth / 2
@@ -713,7 +713,7 @@ Grid manages the elements according to their context.
             width:  ballHeight
 
             # Place ball on the paddle
-            top:    paddleTop - ballHeight - ch
+            top:    paddleTop - ballHeight
             left:   center - ballHeight / 2
 
         # Set velocity
@@ -839,9 +839,7 @@ Class Game (StateMachine)
         # Points
         [__, __, b2, b1] = ball.corners()
         [p1, p2] = paddle.corners()
-
         [bT, bR, bB, bL] = ball.edgeCenters()
-        [bTL, bTR, bBR, bBL] = ball.corners()
 
         # Bounce ball off walls and paddle
         if dir = ball.atEdge()

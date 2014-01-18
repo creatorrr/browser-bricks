@@ -416,11 +416,10 @@
     };
 
     Box.prototype.corners = function() {
-      var ch, height, position, width, _ref;
+      var height, position, width, _ref;
       _ref = this.size(), width = _ref[0], height = _ref[1];
       position = this.position();
-      ch = this._getChromeHeight();
-      return [_.vec(position).add([0, -ch]), _.vec(position).add([width, -ch]), _.vec(position).add([width, height]), _.vec(position).add([0, height])];
+      return [_.vec(position).add([0, 0]), _.vec(position).add([width, 0]), _.vec(position).add([width, height]), _.vec(position).add([0, height])];
     };
 
     Box.prototype.edgeCenters = function() {
@@ -499,10 +498,11 @@
     };
 
     Ball.prototype.atEdge = function() {
-      var availHeight, availWidth, h, w, x, y, _ref1, _ref2, _ref3;
+      var availHeight, availWidth, ch, h, w, x, y, _ref1, _ref2, _ref3;
       _ref1 = this.position(), x = _ref1[0], y = _ref1[1];
       _ref2 = this.size(), w = _ref2[0], h = _ref2[1];
       _ref3 = window.screen, availHeight = _ref3.availHeight, availWidth = _ref3.availWidth;
+      ch = this._getChromeHeight();
       if (x <= 0) {
         return [1, 0];
       } else if (x + w >= availWidth) {
@@ -809,7 +809,7 @@
           columns: 10
         }),
         paddle: new Paddle({
-          height: paddleHeight = 0.02 * height,
+          height: paddleHeight = 0.1 * height,
           width: paddleWidth = 0.3 * width,
           top: paddleTop = height - paddleHeight,
           left: (center = width / 2) - paddleWidth / 2
@@ -817,7 +817,7 @@
         ball: new Ball({
           height: ballHeight = 0.1 * height,
           width: ballHeight,
-          top: paddleTop - ballHeight - ch,
+          top: paddleTop - ballHeight,
           left: center - ballHeight / 2
         })
       };
@@ -947,7 +947,7 @@
     };
 
     Game.prototype._moveBall = function() {
-      var b1, b2, bB, bBL, bBR, bL, bR, bT, bTL, bTR, ball, brick, bricks, ch, dir, height, p1, p2, paddle, width, __, _ref10, _ref11, _ref12, _ref13, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+      var b1, b2, bB, bL, bR, bT, ball, brick, bricks, ch, dir, height, p1, p2, paddle, width, __, _ref10, _ref11, _ref12, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
       _ref2 = this._grid.elements, ball = _ref2.ball, paddle = _ref2.paddle, bricks = _ref2.bricks;
       _ref3 = bricks.brick, height = _ref3.height, width = _ref3.width;
       ch = Box.prototype._getChromeHeight();
@@ -957,7 +957,6 @@
       _ref4 = ball.corners(), __ = _ref4[0], __ = _ref4[1], b2 = _ref4[2], b1 = _ref4[3];
       _ref5 = paddle.corners(), p1 = _ref5[0], p2 = _ref5[1];
       _ref6 = ball.edgeCenters(), bT = _ref6[0], bR = _ref6[1], bB = _ref6[2], bL = _ref6[3];
-      _ref7 = ball.corners(), bTL = _ref7[0], bTR = _ref7[1], bBR = _ref7[2], bBL = _ref7[3];
       if (dir = ball.atEdge()) {
         if (dir[Y] === -1) {
           this.lose();
@@ -965,22 +964,22 @@
           ball.bounce(dir);
           this.trigger('bounce:wall', this);
         }
-      } else if (b1[Y] >= p1[Y] && (p1[X] <= (_ref8 = b1[X]) && _ref8 <= p2[X]) && (p1[X] <= (_ref9 = b2[X]) && _ref9 <= p2[X])) {
+      } else if (b1[Y] >= p1[Y] && (p1[X] <= (_ref7 = b1[X]) && _ref7 <= p2[X]) && (p1[X] <= (_ref8 = b2[X]) && _ref8 <= p2[X])) {
         ball.bounce([0, -1]);
         this.trigger('bounce:paddle', this);
-      } else if (brick = (_ref10 = bricks[Math.floor(bT[Y] / (height + ch))]) != null ? _ref10[Math.floor(bT[X] / width)] : void 0) {
+      } else if (brick = (_ref9 = bricks[Math.floor(bT[Y] / (height + ch))]) != null ? _ref9[Math.floor(bT[X] / width)] : void 0) {
         ball.bounce([0, 1]);
         bricks.remove(brick.id);
         this.trigger('bounce:brick', this);
-      } else if (brick = (_ref11 = bricks[Math.floor(bB[Y] / (height + ch))]) != null ? _ref11[Math.floor(bB[X] / width)] : void 0) {
+      } else if (brick = (_ref10 = bricks[Math.floor(bB[Y] / (height + ch))]) != null ? _ref10[Math.floor(bB[X] / width)] : void 0) {
         ball.bounce([0, -1]);
         bricks.remove(brick.id);
         this.trigger('bounce:brick', this);
-      } else if (brick = (_ref12 = bricks[Math.floor(bR[Y] / (height + ch))]) != null ? _ref12[Math.floor(bR[X] / width)] : void 0) {
+      } else if (brick = (_ref11 = bricks[Math.floor(bR[Y] / (height + ch))]) != null ? _ref11[Math.floor(bR[X] / width)] : void 0) {
         ball.bounce([-1, 0]);
         bricks.remove(brick.id);
         this.trigger('bounce:brick', this);
-      } else if (brick = (_ref13 = bricks[Math.floor(bL[Y] / (height + ch))]) != null ? _ref13[Math.floor(bL[X] / width)] : void 0) {
+      } else if (brick = (_ref12 = bricks[Math.floor(bL[Y] / (height + ch))]) != null ? _ref12[Math.floor(bL[X] / width)] : void 0) {
         ball.bounce([1, 0]);
         bricks.remove(brick.id);
         this.trigger('bounce:brick', this);
