@@ -1,11 +1,126 @@
 <!DOCTYPE html>
 <title>Bricks</title>
 
-<!-- PRODUCTION
-  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/coffee-script/1.6.3/coffee-script.min.js"></script>
+<link href='http://fonts.googleapis.com/css?family=PT+Sans|Monofett' rel='stylesheet' type='text/css'>
+
+<style>
+  /**
+   * KEYS.css
+   *
+   * A simple stylesheet for rendering beautiful keyboard-style elements.
+   *
+   * Author:  Michael Hüneburg
+   * Website: http://michaelhue.com/keyscss
+   * License: MIT License (see LICENSE.txt)
+   */
+
+  kbd, .key {
+    display: inline-block;
+    min-width: 1em;
+    padding: .2em .3em;
+    text-decoration: none;
+    -moz-border-radius: .3em;
+    -webkit-border-radius: .3em;
+    border-radius: .3em;
+    border: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+
+    background: rgb(250, 250, 250);
+    background: -moz-linear-gradient(top, rgb(210, 210, 210), rgb(255, 255, 255));
+    background: -webkit-gradient(linear, left top, left bottom, from(rgb(210, 210, 210)), to(rgb(255, 255, 255)));
+
+    color:  rgb(50, 50, 50);
+    -moz-box-shadow: inset 0 0 1px rgb(255, 255, 255), inset 0 0 .4em rgb(200, 200, 200), 0 .2em 0 rgb(130, 130, 130), 0 .2em 0 rgba(0, 0, 0, .4), 0 .2em .2em rgba(0, 0, 0, .9);
+    -webkit-box-shadow: inset 0 0 1px rgb(255, 255, 255), inset 0 0 .4em rgb(200, 200, 200), 0 .2em 0 rgb(130, 130, 130), 0 .2em 0 rgba(0, 0, 0, .4), 0 .2em .2em rgba(0, 0, 0, .9);
+    box-shadow: inset 0 0 1px rgb(255, 255, 255), inset 0 0 .4em rgb(200, 200, 200), 0 .2em 0 rgb(130, 130, 130), 0 .2em 0 rgba(0, 0, 0, .4), 0 .2em .2em rgba(0, 0, 0, .9);
+  }
+
+  kbd[title], .key[title] {
+    cursor: help;
+  }
+
+</style>
+
+<style>
+  body {
+    margin: 0;
+    background: black;
+  }
+
+  #container {
+    position: relative;
+    top: 50vh;
+    margin: 0 auto;
+
+    width: 1024px;
+    text-align: center;
+  }
+
+  header h1 {
+    font-size: 96px;
+    font-family: 'Monofett' sans-serif;
+    color: white;
+  }
+
+  header h1 > em {
+    color: green;
+    font-style: normal;
+  }
+
+  article kbd {
+    font-size: 24px;
+    font-family: 'PT Sans';
+    margin: 6px 3px;
+    padding: 8px 12px;
+  }
+
+  kbd.space {
+    width: 6em;
+    min-height: 1em;
+  }
+
+  kbd.pressed {
+    -webkit-box-shadow: none;
+    box-shadow: none;
+
+    background: gray;
+
+    position: relative;
+    top: 0.2em;
+  }
+
+  p {
+    font-family: 'PT Sans';
+  }
+</style>
+
+<div id="container">
+  <header>
+    <h1> Browser <em> Bricks </em> </h1>
+  </header>
+
+  <article class="light-keys">
+    <div>
+      <kbd id="k27" title="Quit"> Esc </kbd>
+      <kbd id="k80" title="Play"> P </kbd>
+    </div>
+
+    <div>
+      <kbd id="k37" title="Left"> &larr; </kbd>
+      <kbd id="k32" class="space" title="Pause / Resume"> &nbsp; </kbd>
+      <kbd id="k39" title="Right"> &rarr; </kbd>
+    </div>
+  </article>
+
+  <footer>
+    <p> Disable your popup blocker. </p>
+  </footer>
+</div>
+
+<!-- SOURCE
   <script type="text/literate-coffeescript" src="/bricks.coffee.md"></script>
 -->
 
 <script src="/bricks.js"></script>
-
-<body></body>
