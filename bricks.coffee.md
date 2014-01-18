@@ -1058,13 +1058,13 @@ Class Game (StateMachine)
         up = (e) =>
           @trigger 'key:up', e
 
-        _window.onkeydown or= down for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
+        _window?.onkeydown or= down for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map (brick) ->
-          brick?._window.onkeydown or= down
+          brick?._window?.onkeydown or= down
 
-        _window.onkeyup or= up for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
+        _window?.onkeyup or= up for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map (brick) ->
-          brick?._window.onkeyup or= up
+          brick?._window?.onkeyup or= up
 
         this
 
