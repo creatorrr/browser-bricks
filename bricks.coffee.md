@@ -923,7 +923,7 @@ Class Game (StateMachine)
           when 32  # space
             if state is 'running' then @pause() else @resume()
 
-          when 83 then @stop().display()  # 's'
+          when 80 then @stop().display()  # 'p'
           when 27 then @stop()  # Esc
           when 37  # <-
             {paddle} = @_grid.elements
@@ -1069,7 +1069,6 @@ Set things up and start game.
 
     # Attach DOM load listener
     window?.addEventListener 'load', init, false
-
 
 Exports
 -------

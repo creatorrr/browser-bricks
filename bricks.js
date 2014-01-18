@@ -1031,7 +1031,7 @@
             return this.resume();
           }
           break;
-        case 83:
+        case 80:
           return this.stop().display();
         case 27:
           return this.stop();
