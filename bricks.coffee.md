@@ -46,7 +46,7 @@ Game constants:
 
 Host name:
 
-    HOST_NAME = 'http://creatorrr.github.io/bricks'
+    HOST_NAME = 'http://creatorrr.github.io/browser-bricks'
 
 Helper Functions
 ----------------

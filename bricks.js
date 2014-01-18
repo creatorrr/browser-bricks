@@ -23,7 +23,7 @@
 
   BALL_VELOCITY = 250;
 
-  HOST_NAME = 'http://creatorrr.github.io/bricks';
+  HOST_NAME = 'http://creatorrr.github.io/browser-bricks';
 
   _ = {
     times: function() {
