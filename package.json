@@ -1,6 +1,6 @@
 {
   "name": "bricks",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "browser-pong style breakout game",
   "main": "bricks.js",
   "scripts": {
