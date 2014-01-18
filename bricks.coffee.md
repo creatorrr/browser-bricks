@@ -926,11 +926,11 @@ Class Game (StateMachine)
           when 80 then @stop().display()  # 'p'
           when 27 then @stop()  # Esc
           when 37  # <-
-            {paddle} = @_grid.elements
+            {paddle} = @_grid?.elements
             if state is 'running' then paddle.left().move() else @start()
 
           when 39  # ->
-            {paddle} = @_grid.elements
+            {paddle} = @_grid?.elements
             if state is 'running' then paddle.right().move() else @start()
 
           else @trigger 'error', new Error 'Invalid control'
@@ -1033,21 +1033,32 @@ Class Game (StateMachine)
       show: ->
         @_grid.show()
 
-        # Attach keydown event
-        fn = _.throttle DRAW_INTERVAL, (e) =>
+        # Attach key events
+        down = _.throttle DRAW_INTERVAL, (e) =>
           @trigger 'key:pressed', e
 
-        _window.onkeydown or= fn for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
+        up = (e) =>
+          @trigger 'key:up', e
+
+        _window.onkeydown or= down for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map (brick) ->
-          brick?._window.onkeydown or= fn
+          brick?._window.onkeydown or= down
+
+        _window.onkeyup or= up for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
+        @_grid.elements.bricks.map (brick) ->
+          brick?._window.onkeyup or= up
 
         this
 
       hide: ->
-        # Detach keydown event
+        # Detach key events
         _window?.onkeydown = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map (brick) ->
           brick?._window?.onkeydown = null
+
+        _window?.onkeyup = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
+        @_grid.elements.bricks.map (brick) ->
+          brick?._window?.onkeyup = null
 
         @_grid.hide()
         this
@@ -1064,11 +1075,34 @@ Set things up and start game.
       window.onkeydown = _.throttle DRAW_INTERVAL, (e) ->
         game.trigger 'key:pressed', e
 
+      window.onkeyup = (e) ->
+        game.trigger 'key:up', e
+
+      # Animate onscreen keys
+      game.on 'key:pressed', ({keyCode}) ->
+        # Display keypress
+        if k = window.document.querySelector "#k#{ keyCode }"
+          k.classList.add 'pressed'
+
+      game.on 'key:up', ({keyCode}) ->
+        # Display keypress
+        if k = window.document.querySelector "#k#{ keyCode }"
+          k.classList.remove 'pressed'
+
       # Log errors
       game.on 'error', ({message}) -> console.log "Error: #{ message }"
 
     # Attach DOM load listener
     window?.addEventListener 'load', init, false
+
+    # Cleanup on close
+    window.onbeforeunload = ->
+      if game._getState() is 'idle'
+        return
+
+      else 'Active game!'
+
+    window.onunload = -> game?.stop()
 
 Exports
 -------

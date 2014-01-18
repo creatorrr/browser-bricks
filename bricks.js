@@ -1021,7 +1021,7 @@
     };
 
     Game.prototype._controlGame = function(key) {
-      var paddle, state;
+      var paddle, state, _ref2, _ref3;
       state = this._getState();
       switch (key.keyCode) {
         case 32:
@@ -1036,7 +1036,7 @@
         case 27:
           return this.stop();
         case 37:
-          paddle = this._grid.elements.paddle;
+          paddle = (_ref2 = this._grid) != null ? _ref2.elements.paddle : void 0;
           if (state === 'running') {
             return paddle.left().move();
           } else {
@@ -1044,7 +1044,7 @@
           }
           break;
         case 39:
-          paddle = this._grid.elements.paddle;
+          paddle = (_ref3 = this._grid) != null ? _ref3.elements.paddle : void 0;
           if (state === 'running') {
             return paddle.right().move();
           } else {
@@ -1143,28 +1143,42 @@
     }
 
     Game.prototype.show = function() {
-      var fn, name, _ref2, _window,
+      var down, name, up, _ref2, _ref3, _window,
         _this = this;
       this._grid.show();
-      fn = _.throttle(DRAW_INTERVAL, function(e) {
+      down = _.throttle(DRAW_INTERVAL, function(e) {
         return _this.trigger('key:pressed', e);
       });
+      up = function(e) {
+        return _this.trigger('key:up', e);
+      };
       _ref2 = this._grid.elements;
       for (name in _ref2) {
         _window = _ref2[name]._window;
         if (name === 'ball' || name === 'paddle') {
-          _window.onkeydown || (_window.onkeydown = fn);
+          _window.onkeydown || (_window.onkeydown = down);
         }
       }
       this._grid.elements.bricks.map(function(brick) {
         var _base;
-        return brick != null ? (_base = brick._window).onkeydown || (_base.onkeydown = fn) : void 0;
+        return brick != null ? (_base = brick._window).onkeydown || (_base.onkeydown = down) : void 0;
+      });
+      _ref3 = this._grid.elements;
+      for (name in _ref3) {
+        _window = _ref3[name]._window;
+        if (name === 'ball' || name === 'paddle') {
+          _window.onkeyup || (_window.onkeyup = up);
+        }
+      }
+      this._grid.elements.bricks.map(function(brick) {
+        var _base;
+        return brick != null ? (_base = brick._window).onkeyup || (_base.onkeyup = up) : void 0;
       });
       return this;
     };
 
     Game.prototype.hide = function() {
-      var name, _ref2, _window;
+      var name, _ref2, _ref3, _window;
       _ref2 = this._grid.elements;
       for (name in _ref2) {
         _window = _ref2[name]._window;
@@ -1177,6 +1191,19 @@
       this._grid.elements.bricks.map(function(brick) {
         var _ref3;
         return brick != null ? (_ref3 = brick._window) != null ? _ref3.onkeydown = null : void 0 : void 0;
+      });
+      _ref3 = this._grid.elements;
+      for (name in _ref3) {
+        _window = _ref3[name]._window;
+        if (name === 'ball' || name === 'paddle') {
+          if (_window != null) {
+            _window.onkeyup = null;
+          }
+        }
+      }
+      this._grid.elements.bricks.map(function(brick) {
+        var _ref4;
+        return brick != null ? (_ref4 = brick._window) != null ? _ref4.onkeyup = null : void 0 : void 0;
       });
       this._grid.hide();
       return this;
@@ -1192,6 +1219,23 @@
     window.onkeydown = _.throttle(DRAW_INTERVAL, function(e) {
       return game.trigger('key:pressed', e);
     });
+    window.onkeyup = function(e) {
+      return game.trigger('key:up', e);
+    };
+    game.on('key:pressed', function(_arg) {
+      var k, keyCode;
+      keyCode = _arg.keyCode;
+      if (k = window.document.querySelector("#k" + keyCode)) {
+        return k.classList.add('pressed');
+      }
+    });
+    game.on('key:up', function(_arg) {
+      var k, keyCode;
+      keyCode = _arg.keyCode;
+      if (k = window.document.querySelector("#k" + keyCode)) {
+        return k.classList.remove('pressed');
+      }
+    });
     return game.on('error', function(_arg) {
       var message;
       message = _arg.message;
@@ -1202,6 +1246,18 @@
   if (typeof window !== "undefined" && window !== null) {
     window.addEventListener('load', init, false);
   }
+
+  window.onbeforeunload = function() {
+    if (game._getState() === 'idle') {
+
+    } else {
+      return 'Active game!';
+    }
+  };
+
+  window.onunload = function() {
+    return typeof game !== "undefined" && game !== null ? game.stop() : void 0;
+  };
 
   _.extend(window, {
     _: _
