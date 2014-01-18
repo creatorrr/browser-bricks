@@ -1164,23 +1164,27 @@
       for (name in _ref2) {
         _window = _ref2[name]._window;
         if (name === 'ball' || name === 'paddle') {
-          _window.onkeydown || (_window.onkeydown = down);
+          if (_window != null) {
+            _window.onkeydown || (_window.onkeydown = down);
+          }
         }
       }
       this._grid.elements.bricks.map(function(brick) {
-        var _base;
-        return brick != null ? (_base = brick._window).onkeydown || (_base.onkeydown = down) : void 0;
+        var _ref3;
+        return brick != null ? (_ref3 = brick._window) != null ? _ref3.onkeydown || (_ref3.onkeydown = down) : void 0 : void 0;
       });
       _ref3 = this._grid.elements;
       for (name in _ref3) {
         _window = _ref3[name]._window;
         if (name === 'ball' || name === 'paddle') {
-          _window.onkeyup || (_window.onkeyup = up);
+          if (_window != null) {
+            _window.onkeyup || (_window.onkeyup = up);
+          }
         }
       }
       this._grid.elements.bricks.map(function(brick) {
-        var _base;
-        return brick != null ? (_base = brick._window).onkeyup || (_base.onkeyup = up) : void 0;
+        var _ref4;
+        return brick != null ? (_ref4 = brick._window) != null ? _ref4.onkeyup || (_ref4.onkeyup = up) : void 0 : void 0;
       });
       return this;
     };
