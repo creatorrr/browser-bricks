@@ -240,10 +240,12 @@ All the objects will inherit from this class.
       # -- Private --
       _settings:
         # Default settings
-        height: 100
-        width:  200
-        top:    0
-        left:   0
+        height:   100
+        width:    200
+        top:      0
+        left:     0
+
+        template: ''
 
       _props:
         # Fixed window props
@@ -297,6 +299,14 @@ All the objects will inherit from this class.
 
         # Set random name with namespace
         @id = _.uuid()
+
+        # Set template on show
+        @on 'show', => @setTemplate @_get 'template'
+
+      # Set inner html
+      setTemplate: (template) ->
+        return unless root = @_window?.document.querySelector 'html'
+        root.innerHTML = template this
 
       # Show window with settings.
       show: ->
@@ -408,7 +418,6 @@ will be used to render the bricks.
 Its pretty much a useless box.
 
     class Brick extends Box
-      type: 'brick'
 
 Class: Ball (Box)
 -----------------
@@ -432,8 +441,6 @@ instant and the methods to manipulate it.
         @_velocity = _.clone @_velocity
 
         super args...
-
-      type: 'ball'
 
       # Set or retrieve velocity
       velocity: (vel) ->
@@ -510,8 +517,6 @@ A paddle is basically an enlarged ball thats constrained to move in a
 straight line.
 
     class Paddle extends Ball
-      type: 'paddle'
-
       left: ->
         [vx, vy] = @velocity().map Math.abs
         @velocity [-vx, vy]
@@ -551,7 +556,7 @@ It also ascertains whether the `Ball` is touching a `Brick`.
     class Bricks extends Array
       # -- Private --
       # Generate bricks
-      _generate: ({@columns, @rows}) ->
+      _generate: ({@columns, @rows, template}) ->
         # Viewport dimensions
         ch = Box::_getChromeHeight()
         vt = window.screen.availTop
@@ -571,6 +576,8 @@ It also ascertains whether the `Ball` is touching a `Brick`.
               width: width
               top: ((height + ch) * row) + vt
               left: width * column
+
+              template: template
 
       # -- Public --
       constructor: (viewport, props) ->
@@ -702,11 +709,19 @@ Grid manages the elements according to their context.
             rows: 3
             columns: 10
 
+            template: -> """
+              <body style="background: black"></body>
+            """
+
           paddle: new Paddle
             height: paddleHeight = 0.1 * height
             width:  paddleWidth = 0.3 * width
             top:    paddleTop = height - paddleHeight  # Place at bottom
             left:   (center = width / 2) - paddleWidth / 2
+
+            template: -> """
+              <body style="background: brown"></body>
+            """
 
           ball: new Ball
             height: ballHeight = 0.1 * height
@@ -715,6 +730,10 @@ Grid manages the elements according to their context.
             # Place ball on the paddle
             top:    paddleTop - ballHeight
             left:   center - ballHeight / 2
+
+            template: -> """
+              <body style="background: purple"></body>
+            """
 
         # Set velocity
         @elements.paddle.velocity [PADDLE_VELOCITY, 0]

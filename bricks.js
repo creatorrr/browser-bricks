@@ -280,7 +280,8 @@
       height: 100,
       width: 200,
       top: 0,
-      left: 0
+      left: 0,
+      template: ''
     };
 
     Box.prototype._props = {
@@ -335,6 +336,7 @@
     });
 
     function Box(settings) {
+      var _this = this;
       if (settings == null) {
         settings = {};
       }
@@ -342,7 +344,18 @@
       this._settings = _.clone(this._settings);
       this._update(settings);
       this.id = _.uuid();
+      this.on('show', function() {
+        return _this.setTemplate(_this._get('template'));
+      });
     }
+
+    Box.prototype.setTemplate = function(template) {
+      var root, _ref;
+      if (!(root = (_ref = this._window) != null ? _ref.document.querySelector('html') : void 0)) {
+        return;
+      }
+      return root.innerHTML = template(this);
+    };
 
     Box.prototype.show = function() {
       var opts;
@@ -446,8 +459,6 @@
       return _ref;
     }
 
-    Brick.prototype.type = 'brick';
-
     return Brick;
 
   })(Box);
@@ -469,8 +480,6 @@
       this._velocity = _.clone(this._velocity);
       Ball.__super__.constructor.apply(this, args);
     }
-
-    Ball.prototype.type = 'ball';
 
     Ball.prototype.velocity = function(vel) {
       var vx, vy, _ref1, _ref2, _ref3;
@@ -540,8 +549,6 @@
       return _ref1;
     }
 
-    Paddle.prototype.type = 'paddle';
-
     Paddle.prototype.left = function() {
       var vx, vy, _ref2;
       _ref2 = this.velocity().map(Math.abs), vx = _ref2[0], vy = _ref2[1];
@@ -584,8 +591,8 @@
     __extends(Bricks, _super);
 
     Bricks.prototype._generate = function(_arg) {
-      var ch, column, height, row, vt, width, _i, _ref2, _results;
-      this.columns = _arg.columns, this.rows = _arg.rows;
+      var ch, column, height, row, template, vt, width, _i, _ref2, _results;
+      this.columns = _arg.columns, this.rows = _arg.rows, template = _arg.template;
       ch = Box.prototype._getChromeHeight();
       vt = window.screen.availTop;
       this.brick = {
@@ -603,7 +610,8 @@
               height: height,
               width: width,
               top: ((height + ch) * row) + vt,
-              left: width * column
+              left: width * column,
+              template: template
             })));
           }
           return _results1;
@@ -806,19 +814,28 @@
       this.elements = {
         bricks: new Bricks(this, {
           rows: 3,
-          columns: 10
+          columns: 10,
+          template: function() {
+            return "<body style=\"background: black\"></body>";
+          }
         }),
         paddle: new Paddle({
           height: paddleHeight = 0.1 * height,
           width: paddleWidth = 0.3 * width,
           top: paddleTop = height - paddleHeight,
-          left: (center = width / 2) - paddleWidth / 2
+          left: (center = width / 2) - paddleWidth / 2,
+          template: function() {
+            return "<body style=\"background: brown\"></body>";
+          }
         }),
         ball: new Ball({
           height: ballHeight = 0.1 * height,
           width: ballHeight,
           top: paddleTop - ballHeight,
-          left: center - ballHeight / 2
+          left: center - ballHeight / 2,
+          template: function() {
+            return "<body style=\"background: purple\"></body>";
+          }
         })
       };
       this.elements.paddle.velocity([PADDLE_VELOCITY, 0]);
