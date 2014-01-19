@@ -46,7 +46,9 @@ Game constants:
 
 Host name:
 
-    HOST_NAME = 'http://creatorrr.github.io/browser-bricks'
+    ROOT = do ->
+      root = window.location.href
+      if root[root.length - 1] is '/' then root[...root.length-1] else root
 
 Helper Functions
 ----------------
@@ -719,7 +721,7 @@ Grid manages the elements according to their context.
             columns: 10
 
             template: -> """
-              <body style="background: url('#{ HOST_NAME }/img/bricks.png');"></body>
+              <body style="background: url('#{ ROOT }/img/bricks.png');"></body>
             """
 
           paddle: new Paddle
@@ -729,7 +731,7 @@ Grid manages the elements according to their context.
             left:   (center = width / 2) - paddleWidth / 2
 
             template: -> """
-              <body style="background: url('#{ HOST_NAME }/img/pattern.png');"></body>
+              <body style="background: url('#{ ROOT }/img/pattern.png');"></body>
             """
 
           ball: new Ball
