@@ -1159,9 +1159,9 @@
           _this._playSound(next);
         }
         if (next === 'won') {
-          return _.wait(100, function() {
+          return _.wait(400, function() {
             if (window.confirm('Great job! Play again?')) {
-              return _this.display();
+              return _this.stop().display();
             }
           });
         }
@@ -1291,7 +1291,8 @@
   }
 
   window.onbeforeunload = function() {
-    if (game._getState() === 'idle') {
+    var _ref2;
+    if ((_ref2 = game._getState()) === 'idle' || _ref2 === 'won') {
 
     } else {
       return 'Active game!';

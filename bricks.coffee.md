@@ -1065,7 +1065,7 @@ Class Game (StateMachine)
 
           # Prompt for rematch
           if next is 'won'
-            _.wait 100, => @display() if window.confirm 'Great job! Play again?'
+            _.wait 400, => @stop().display() if window.confirm 'Great job! Play again?'
 
       # Show
       show: ->
@@ -1144,7 +1144,7 @@ Set things up and start game.
 
     # Cleanup on close
     window.onbeforeunload = ->
-      if game._getState() is 'idle'
+      if game._getState() in ['idle', 'won']
         return
 
       else 'Active game!'
