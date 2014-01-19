@@ -50,6 +50,19 @@ Host name:
       root = window.location.href
       if root[root.length - 1] is '/' then root[...root.length-1] else root
 
+Browser type:
+
+    BROWSER = do ->
+      ua = window.navigator.userAgent.toLowerCase()
+
+      if !!~ ua.indexOf 'chrome'
+        'chrome'
+
+      else if !!~ ua.indexOf 'firefox'
+        'firefox'
+
+      else 'other'
+
 Helper Functions
 ----------------
 
@@ -287,7 +300,7 @@ All the objects will inherit from this class.
         @_getAll()
 
       _get: (prop) -> @_settings[prop]
-      _getAll: -> _.extend (_.clone @_settings), @_fixed
+      _getAll: -> _.extend (_.clone @_settings), @_props
 
       _getDefault: -> @constructor::_settings
 
@@ -616,7 +629,8 @@ It also ascertains whether the `Ball` is touching a `Brick`.
 
       # Map function
       map: (fn) ->
-        fn? brick for brick in row for row in this
+        result = (fn? brick for brick in row for row in this)
+        result.reduce ((a, b) -> a.concat b), []
 
       # Find brick by test
       find: (test) ->
@@ -778,6 +792,11 @@ Grid manages the elements according to their context.
       # Change visibility
       show: -> element.show() for name, element of @elements
       hide: -> element.hide() for name, element of @elements
+
+      # Check popups
+      popupsDisplayed: ->
+        popups = @elements.bricks.map (i) -> i._window
+        popups.reduce ((result, popup) -> result and popup?), true
 
 Class: StateMachine (Events)
 ----------------------------
@@ -1071,6 +1090,20 @@ Class Game (StateMachine)
       show: ->
         @_grid.show()
 
+        # Check for popup blocker
+        _.defer =>
+          if @_grid? and not @_grid.popupsDisplayed()
+            @stop()
+
+            # Take user to help page
+            if window.confirm "Please enable popups before playing this game. Do you wish to be taken to your browser's corresponding support page?"
+              url = switch BROWSER
+                when 'chrome' then 'https://support.google.com/chrome/answer/95472?hl=en'
+                when 'firefox' then 'https://support.mozilla.org/en-US/kb/pop-blocker-settings-exceptions-troubleshooting#w_pop-up-blocker-settings'
+                else 'http://www.qantas.com.au/travel/airlines/how-to-enable-popups/global/en'
+
+              window.location.replace url
+
         # Attach key events
         down = _.throttle DRAW_INTERVAL, (e) =>
           @trigger 'key:pressed', e
@@ -1106,6 +1139,10 @@ Init
 
 Set things up and start game.
 
+    # Alias for querySelector
+    $ = (q) -> window.document.querySelector q
+    $$ = (q) -> window.document.querySelectorAll q
+
     init = ->
       window.game = game = new Game
 
@@ -1119,16 +1156,16 @@ Set things up and start game.
       # Animate onscreen keys
       game.on 'key:pressed', ({keyCode}) ->
         # Display keypress
-        if k = window.document.querySelector "#k#{ keyCode }"
+        if k = $ "#k#{ keyCode }"
           k.classList.add 'pressed'
 
       game.on 'key:up', ({keyCode}) ->
         # Clear previous
-        e.classList.remove 'pressed' for e in window.document.querySelectorAll 'kbd'
+        e.classList.remove 'pressed' for e in $$ 'kbd'
 
       # Manage glow
       game.on 'state:change', (__, next) ->
-        k = window.document.querySelector '#k80'
+        k = $ '#k80'
 
         if next is 'idle'
           k.className = 'animated delay repeat glow'
