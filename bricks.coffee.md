@@ -721,7 +721,13 @@ Grid manages the elements according to their context.
             columns: 10
 
             template: -> """
-              <body style="background: url('#{ ROOT }/img/bricks.png');"></body>
+              <body style="
+                background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('#{ ROOT }/img/bricks.png');
+                background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('#{ ROOT }/img/bricks.png');
+                background: -o-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('#{ ROOT }/img/bricks.png');
+                background: -ms-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('#{ ROOT }/img/bricks.png');
+                background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('#{ ROOT }/img/bricks.png');
+              "></body>
             """
 
           paddle: new Paddle
@@ -731,7 +737,13 @@ Grid manages the elements according to their context.
             left:   (center = width / 2) - paddleWidth / 2
 
             template: -> """
-              <body style="background: url('#{ ROOT }/img/pattern.png');"></body>
+              <body style="
+                background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('#{ ROOT }/img/pattern.png');
+                background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('#{ ROOT }/img/pattern.png');
+                background: -o-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('#{ ROOT }/img/pattern.png');
+                background: -ms-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('#{ ROOT }/img/pattern.png');
+                background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('#{ ROOT }/img/pattern.png');
+              "></body>
             """
 
           ball: new Ball
@@ -744,10 +756,10 @@ Grid manages the elements according to their context.
 
             template: -> """
               <body style="background: black; overflow: hidden;">
-                <div style="background: white;
+                <div style="background: lime;
                             height: 80vh;
                             width: 80vh;
-                            margin: 10vh auto;
+                            margin: 0 auto;
                             border-radius: 50%;">
                   &nbsp;
                 </div>
@@ -937,7 +949,9 @@ Class Game (StateMachine)
           when 32  # space
             if state is 'running' then @pause() else @resume()
 
-          when 80 then @stop().display()  # 'p'
+          when 80
+            if state in ['lost', 'idle'] then @stop().display()  # 'p'
+
           when 27 then @stop()  # Esc
           when 37  # <-
             {paddle} = @_grid?.elements
@@ -1113,7 +1127,7 @@ Set things up and start game.
         k = window.document.querySelector '#k80'
 
         if next is 'idle'
-          k.className = 'animated repeat glow'
+          k.className = 'animated delay repeat glow'
 
         else
           k.className = ''

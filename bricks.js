@@ -835,7 +835,7 @@
           rows: 3,
           columns: 10,
           template: function() {
-            return "<body style=\"background: url('" + ROOT + "/img/bricks.png');\"></body>";
+            return "<body style=\"\n  background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('" + ROOT + "/img/bricks.png');\n  background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('" + ROOT + "/img/bricks.png');\n  background: -o-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('" + ROOT + "/img/bricks.png');\n  background: -ms-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('" + ROOT + "/img/bricks.png');\n  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('" + ROOT + "/img/bricks.png');\n\"></body>";
           }
         }),
         paddle: new Paddle({
@@ -844,7 +844,7 @@
           top: paddleTop = height - paddleHeight,
           left: (center = width / 2) - paddleWidth / 2,
           template: function() {
-            return "<body style=\"background: url('" + ROOT + "/img/pattern.png');\"></body>";
+            return "<body style=\"\n  background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('" + ROOT + "/img/pattern.png');\n  background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('" + ROOT + "/img/pattern.png');\n  background: -o-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('" + ROOT + "/img/pattern.png');\n  background: -ms-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('" + ROOT + "/img/pattern.png');\n  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), url('" + ROOT + "/img/pattern.png');\n\"></body>";
           }
         }),
         ball: new Ball({
@@ -853,7 +853,7 @@
           top: paddleTop - ballHeight,
           left: center - ballHeight / 2,
           template: function() {
-            return "<body style=\"background: black; overflow: hidden;\">\n  <div style=\"background: white;\n              height: 80vh;\n              width: 80vh;\n              margin: 10vh auto;\n              border-radius: 50%;\">\n    &nbsp;\n  </div>\n</body>";
+            return "<body style=\"background: black; overflow: hidden;\">\n  <div style=\"background: lime;\n              height: 80vh;\n              width: 80vh;\n              margin: 0 auto;\n              border-radius: 50%;\">\n    &nbsp;\n  </div>\n</body>";
           }
         })
       };
@@ -1042,7 +1042,10 @@
           }
           break;
         case 80:
-          return this.stop().display();
+          if (state === 'lost' || state === 'idle') {
+            return this.stop().display();
+          }
+          break;
         case 27:
           return this.stop();
         case 37:
@@ -1264,7 +1267,7 @@
       var k;
       k = window.document.querySelector('#k80');
       if (next === 'idle') {
-        return k.className = 'animated repeat glow';
+        return k.className = 'animated delay repeat glow';
       } else {
         return k.className = '';
       }
