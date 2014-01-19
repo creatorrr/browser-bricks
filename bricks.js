@@ -984,7 +984,7 @@
 
     Game.prototype._playSound = function(name) {
       var sound;
-      sound = new Audio("/sounds/" + name + ".wav");
+      sound = new Audio("sounds/" + name + ".wav");
       return sound.play();
     };
 

@@ -868,7 +868,7 @@ Class Game (StateMachine)
         ).multiply next
 
       _playSound: (name) ->
-        sound = new Audio "/sounds/#{ name }.wav"
+        sound = new Audio "sounds/#{ name }.wav"
         sound.play()
 
       _moveBall: ->
