@@ -868,7 +868,7 @@ Class Game (StateMachine)
         ).multiply next
 
       _playSound: (name) ->
-        sound = new Audio "/sounds/#{ name }.wav"
+        sound = new Audio "sounds/#{ name }.wav"
         sound.play()
 
       _moveBall: ->
@@ -1107,6 +1107,16 @@ Set things up and start game.
       game.on 'key:up', ({keyCode}) ->
         # Clear previous
         e.classList.remove 'pressed' for e in window.document.querySelectorAll 'kbd'
+
+      # Manage glow
+      game.on 'state:change', (__, next) ->
+        k = window.document.querySelector '#k80'
+
+        if next is 'idle'
+          k.className = 'animated repeat glow'
+
+        else
+          k.className = ''
 
       # Log errors
       game.on 'error', ({message}) -> console.log "Error: #{ message }"
