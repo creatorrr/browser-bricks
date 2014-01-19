@@ -994,7 +994,7 @@
       _ref3 = bricks.brick, height = _ref3.height, width = _ref3.width;
       ch = Box.prototype._getChromeHeight();
       if (!bricks.len()) {
-        return this.won();
+        return this.win();
       }
       _ref4 = ball.corners(), __ = _ref4[0], __ = _ref4[1], b2 = _ref4[2], b1 = _ref4[3];
       _ref5 = paddle.corners(), p1 = _ref5[0], p2 = _ref5[1];
@@ -1156,7 +1156,14 @@
       this.on('bounce:paddle', _.bind(this._playSound, this, 'paddle'));
       this.on('state:change', function(__, next) {
         if (next === 'won' || next === 'lost') {
-          return _this._playSound(next);
+          _this._playSound(next);
+        }
+        if (next === 'won') {
+          return _.wait(100, function() {
+            if (window.confirm('Great job! Play again?')) {
+              return _this.display();
+            }
+          });
         }
       });
     }
@@ -1294,10 +1301,6 @@
   window.onunload = function() {
     return typeof game !== "undefined" && game !== null ? game.stop() : void 0;
   };
-
-  _.extend(window, {
-    _: _
-  });
 
 }).call(this);
 

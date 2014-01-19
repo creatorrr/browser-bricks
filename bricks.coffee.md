@@ -888,7 +888,7 @@ Class Game (StateMachine)
         {height, width} = bricks.brick
         ch = Box::_getChromeHeight()
 
-        return @won() unless bricks.len()
+        return @win() unless bricks.len()
 
         # Points
         [__, __, b2, b1] = ball.corners()
@@ -1063,6 +1063,10 @@ Class Game (StateMachine)
         @on 'state:change', (__, next) =>
           @_playSound next if next in ['won', 'lost']
 
+          # Prompt for rematch
+          if next is 'won'
+            _.wait 100, => @display() if window.confirm 'Great job! Play again?'
+
       # Show
       show: ->
         @_grid.show()
@@ -1146,12 +1150,4 @@ Set things up and start game.
       else 'Active game!'
 
     window.onunload = -> game?.stop()
-
-Exports
--------
-
-List of vars exported to global namespace.
-
-    _.extend window,
-      _: _
 
