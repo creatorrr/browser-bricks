@@ -1260,6 +1260,15 @@
       }
       return _results;
     });
+    game.on('state:change', function(__, next) {
+      var k;
+      k = window.document.querySelector('#k80');
+      if (next === 'idle') {
+        return k.className = 'animated repeat glow';
+      } else {
+        return k.className = '';
+      }
+    });
     return game.on('error', function(_arg) {
       var message;
       message = _arg.message;
