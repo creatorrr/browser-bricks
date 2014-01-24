@@ -246,6 +246,7 @@ Now, lets define some helper functions for the application.
       onKeyEvent: do ->
         _fn = {}
         _timers = {}
+        _repeaters = [37, 39]
 
         (w, fn) ->
           _fn[w.name] = fn
@@ -257,10 +258,10 @@ Now, lets define some helper functions for the application.
             {keyCode} = e
 
             unless timers[keyCode]?
-              clearInterval timers[keyCode]
               fn? 'key:down', e
 
-              timers[keyCode] = setInterval (_.bind fn, null, 'key:down', e), DRAW_INTERVAL
+              if keyCode in _repeaters
+                timers[keyCode] = setInterval (-> fn? 'key:down', e), DRAW_INTERVAL
 
             true
 
@@ -341,7 +342,7 @@ All the objects will inherit from this class.
         status:      false
 
       _window: null  # Empty window object
-      _url: '' # Empty placeholder
+      _url: ''
 
       _update: (settings) ->
         # Update settings
@@ -1044,6 +1045,19 @@ Class Game (StateMachine)
               when 'paused' then @resume()
               else @start()
 
+          when 191 # ?
+            h = window.screen.availHeight
+            w = window.screen.availWidth
+
+            b = new Box
+              height: h * 2/3
+              width: w / 4
+              top: h / 6
+              left: w * 3/8
+
+            b._url = 'help.html'
+            b.show()
+
           else @trigger 'error', new Error 'Invalid control'
 
       _loop: (current, next) ->
@@ -1059,8 +1073,7 @@ Class Game (StateMachine)
             @show()
 
           when 'idle', 'won'
-            @hide()
-            return @_grid = null
+            return @hide()
 
           when 'lost'
             {ball} = @_grid.elements
@@ -1180,6 +1193,8 @@ Class Game (StateMachine)
         this
 
       hide: ->
+        return unless @_grid?
+
         # Detach key events
         for name, {_window} of @_grid.elements when _window? and name in ['ball', 'paddle']
           _.onKeyEvent _window, null
@@ -1189,7 +1204,18 @@ Class Game (StateMachine)
           _.onKeyEvent w, null if w?
 
         @_grid.hide()
+        @_grid = null
+
         this
+
+      cheat: ->
+        {bricks} = @_grid.elements
+
+        for row, i in bricks
+          for brick, j in row
+            if i+j
+              brick?.hide()
+              @_grid.elements.bricks[i][j] = null
 
 Init
 ----
@@ -1217,16 +1243,19 @@ Set things up and start game.
         # Remove pressed state
         for k in $$ 'kbd'
           k.classList.remove 'pressed'
+          k.classList.remove 'shown'
 
       # Manage glow
       game.on 'state:change', (__, next) ->
         k = $ '#k80'
+        original = _.once -> k.className
+        classes = 'animated delay repeat glow'.split ' '
 
         if next is 'idle'
-          k.className = 'animated delay repeat glow'
+          k.classList.add cls for cls in classes
 
         else
-          k.className = ''
+          k.classList.remove cls for cls in classes
 
       # Popup pointer
       game.on 'popup:blocked', ->

@@ -1,0 +1,93 @@
+body {
+  margin: 0;
+  background: black;
+}
+
+#container {
+  position: relative;
+  top: 50vh;
+  margin: 0 auto;
+
+  max-width: 1024px;
+  text-align: center;
+}
+
+header h1 {
+  font-size: 96px;
+  font-family: 'Monofett' sans-serif;
+  color: white;
+}
+
+header h1 > em {
+  color: green;
+  font-style: normal;
+}
+
+article h1, article p {
+  color: white;
+}
+
+article kbd {
+  font-size: 24px;
+  font-family: 'PT Sans' sans-serif;
+  margin: 6px 3px;
+  padding: 8px 12px;
+}
+
+kbd.space {
+  width: 6em;
+  min-height: 1em;
+}
+
+kbd.pressed {
+  -webkit-box-shadow: none;
+  box-shadow: none;
+
+  background: gray;
+
+  position: relative;
+  top: 0.2em;
+}
+
+p {
+  font-family: 'PT Sans' sans-serif;
+}
+
+footer {
+  position: relative;
+  top: 2em;
+}
+
+footer p {
+  font-size: 12px;
+  color: white;
+}
+
+span#arrow {
+  position: absolute;
+  top: 8px;
+  right: 1em;
+
+  color: white;
+  font-size: 10em;
+}
+
+.social {
+  position: fixed;
+  top: 2em;
+  right: 2em;
+}
+
+.social iframe {
+  margin-bottom: 4px;
+}
+
+.social .fb-share-button {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.hidden {
+  display: none;
+}
+

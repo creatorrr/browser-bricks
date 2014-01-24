@@ -3,374 +3,33 @@
 
 <link href='http://fonts.googleapis.com/css?family=PT+Sans|Monofett' rel='stylesheet' type='text/css'>
 
-<style>
-  /**
-   * KEYS.css
-   *
-   * A simple stylesheet for rendering beautiful keyboard-style elements.
-   *
-   * Author:  Michael Hüneburg
-   * Website: http://michaelhue.com/keyscss
-   * License: MIT License (see LICENSE.txt)
-   */
-
-  kbd, .key {
-    display: inline-block;
-    min-width: 1em;
-    padding: .2em .3em;
-    text-decoration: none;
-    -moz-border-radius: .3em;
-    -webkit-border-radius: .3em;
-    border-radius: .3em;
-    border: none;
-    -moz-user-select: none;
-    -webkit-user-select: none;
-    user-select: none;
-
-    background: rgb(250, 250, 250);
-    background: -moz-linear-gradient(top, rgb(210, 210, 210), rgb(255, 255, 255));
-    background: -webkit-gradient(linear, left top, left bottom, from(rgb(210, 210, 210)), to(rgb(255, 255, 255)));
-
-    color:  rgb(50, 50, 50);
-    -moz-box-shadow: inset 0 0 1px rgb(255, 255, 255), inset 0 0 .4em rgb(200, 200, 200), 0 .2em 0 rgb(130, 130, 130), 0 .2em 0 rgba(0, 0, 0, .4), 0 .2em .2em rgba(0, 0, 0, .9);
-    -webkit-box-shadow: inset 0 0 1px rgb(255, 255, 255), inset 0 0 .4em rgb(200, 200, 200), 0 .2em 0 rgb(130, 130, 130), 0 .2em 0 rgba(0, 0, 0, .4), 0 .2em .2em rgba(0, 0, 0, .9);
-    box-shadow: inset 0 0 1px rgb(255, 255, 255), inset 0 0 .4em rgb(200, 200, 200), 0 .2em 0 rgb(130, 130, 130), 0 .2em 0 rgba(0, 0, 0, .4), 0 .2em .2em rgba(0, 0, 0, .9);
-  }
-
-  kbd[title], .key[title] {
-    cursor: help;
-  }
-
-</style>
-
-<style>
-  .animated{-webkit-animation-fill-mode:both;-moz-animation-fill-mode:both;-ms-animation-fill-mode:both;-o-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-duration:1s;-moz-animation-duration:1s;-ms-animation-duration:1s;-o-animation-duration:1s;animation-duration:1s;}.animated.hinge{-webkit-animation-duration:1s;-moz-animation-duration:1s;-ms-animation-duration:1s;-o-animation-duration:1s;animation-duration:1s;}@-webkit-keyframes flash {
-    0%, 50%, 100% {opacity: 1;} 25%, 75% {opacity: 0;}
-  }
-
-  @-moz-keyframes flash {
-    0%, 50%, 100% {opacity: 1;}
-    25%, 75% {opacity: 0;}
-  }
-
-  @-o-keyframes flash {
-    0%, 50%, 100% {opacity: 1;}
-    25%, 75% {opacity: 0;}
-  }
-
-  @keyframes flash {
-    0%, 50%, 100% {opacity: 1;}
-    25%, 75% {opacity: 0;}
-  }
-
-  .flash {
-    -webkit-animation-name: flash;
-    -moz-animation-name: flash;
-    -o-animation-name: flash;
-    animation-name: flash;
-  }
-  @-webkit-keyframes shake {
-    0%, 100% {-webkit-transform: translateX(0);}
-    10%, 30%, 50%, 70%, 90% {-webkit-transform: translateX(-10px);}
-    20%, 40%, 60%, 80% {-webkit-transform: translateX(10px);}
-  }
-
-  @-moz-keyframes shake {
-    0%, 100% {-moz-transform: translateX(0);}
-    10%, 30%, 50%, 70%, 90% {-moz-transform: translateX(-10px);}
-    20%, 40%, 60%, 80% {-moz-transform: translateX(10px);}
-  }
-
-  @-o-keyframes shake {
-    0%, 100% {-o-transform: translateX(0);}
-    10%, 30%, 50%, 70%, 90% {-o-transform: translateX(-10px);}
-    20%, 40%, 60%, 80% {-o-transform: translateX(10px);}
-  }
-
-  @keyframes shake {
-    0%, 100% {transform: translateX(0);}
-    10%, 30%, 50%, 70%, 90% {transform: translateX(-10px);}
-    20%, 40%, 60%, 80% {transform: translateX(10px);}
-  }
-
-  .shake {
-    -webkit-animation-name: shake;
-    -moz-animation-name: shake;
-    -o-animation-name: shake;
-    animation-name: shake;
-  }
-  @-webkit-keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {-webkit-transform: translateY(0);}
-    40% {-webkit-transform: translateY(-30px);}
-    60% {-webkit-transform: translateY(-15px);}
-  }
-
-  @-moz-keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {-moz-transform: translateY(0);}
-    40% {-moz-transform: translateY(-30px);}
-    60% {-moz-transform: translateY(-15px);}
-  }
-
-  @-o-keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {-o-transform: translateY(0);}
-    40% {-o-transform: translateY(-30px);}
-    60% {-o-transform: translateY(-15px);}
-  }
-  @keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-    40% {transform: translateY(-30px);}
-    60% {transform: translateY(-15px);}
-  }
-
-  .bounce {
-    -webkit-animation-name: bounce;
-    -moz-animation-name: bounce;
-    -o-animation-name: bounce;
-    animation-name: bounce;
-  }
-  /* originally authored by Nick Pettit - https://github.com/nickpettit/glide */
-
-  @-webkit-keyframes pulse {
-      0% { -webkit-transform: scale(1); }
-    50% { -webkit-transform: scale(1.1); }
-      100% { -webkit-transform: scale(1); }
-  }
-  @-moz-keyframes pulse {
-      0% { -moz-transform: scale(1); }
-    50% { -moz-transform: scale(1.1); }
-      100% { -moz-transform: scale(1); }
-  }
-  @-o-keyframes pulse {
-      0% { -o-transform: scale(1); }
-    50% { -o-transform: scale(1.1); }
-      100% { -o-transform: scale(1); }
-  }
-  @keyframes pulse {
-      0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-  }
-
-  .pulse {
-    -webkit-animation-name: pulse;
-    -moz-animation-name: pulse;
-    -o-animation-name: pulse;
-    animation-name: pulse;
-  }
-  @-webkit-keyframes fadeInDown {
-    0% {
-      opacity: 0;
-      -webkit-transform: translateY(-20px);
-    }
-
-    100% {
-      opacity: 1;
-      -webkit-transform: translateY(0);
-    }
-  }
-
-  @-moz-keyframes fadeInDown {
-    0% {
-      opacity: 0;
-      -moz-transform: translateY(-20px);
-    }
-
-    100% {
-      opacity: 1;
-      -moz-transform: translateY(0);
-    }
-  }
-
-  @-o-keyframes fadeInDown {
-    0% {
-      opacity: 0;
-      -o-transform: translateY(-20px);
-    }
-
-    100% {
-      opacity: 1;
-      -o-transform: translateY(0);
-    }
-  }
-
-  @keyframes fadeInDown {
-    0% {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .fadeInDown {
-    -webkit-animation-name: fadeInDown;
-    -moz-animation-name: fadeInDown;
-    -o-animation-name: fadeInDown;
-    animation-name: fadeInDown;
-  }
-
-  @-webkit-keyframes glow {
-    0% {
-      background: white;
-    }
-
-    50% {
-      background: #f2f2bf;
-    }
-
-    100% {
-      background: white;
-    }
-  }
-
-  @-moz-keyframes glow {
-    0% {
-      background: white;
-    }
-
-    50% {
-      background: #f2f2bf;
-    }
-
-    100% {
-      background: white;
-    }
-  }
-
-  @-o-keyframes glow {
-    0% {
-      background: white;
-    }
-
-    50% {
-      background: #f2f2bf;
-    }
-
-    100% {
-      background: white;
-    }
-  }
-
-  @keyframes glow {
-    0% {
-      background: white;
-    }
-
-    50% {
-      background: #f2f2bf;
-    }
-
-    100% {
-      background: white;
-    }
-  }
-
-  .glow {
-    -webkit-animation-name: glow;
-    -moz-animation-name: glow;
-    -o-animation-name: glow;
-    animation-name: glow;
-  }
-
-  .repeat {
-    -webkit-animation-duration: 3s;
-    -moz-animation-duration: 3s;
-    animation-duration: 3s;
-
-    -webkit-animation-iteration-count: infinite;
-    -moz-animation-iteration-count: infinite;
-    animation-iteration-count: infinite;
-  }
-
-  .delay {
-    -webkit-animation-delay: 1s;
-    -moz-animation-delay: 1s;
-    animation-delay: 1s;
-  }
-
-  .long-delay {
-    -webkit-animation-delay: 3s;
-    -moz-animation-delay: 3s;
-    animation-delay: 3s;
-  }
-
-</style>
-
-<style>
-  body {
-    margin: 0;
-    background: black;
-  }
-
-  #container {
-    position: relative;
-    top: 50vh;
-    margin: 0 auto;
-
-    width: 1024px;
-    text-align: center;
-  }
-
-  header h1 {
-    font-size: 96px;
-    font-family: 'Monofett' sans-serif;
-    color: white;
-  }
-
-  header h1 > em {
-    color: green;
-    font-style: normal;
-  }
-
-  article kbd {
-    font-size: 24px;
-    font-family: 'PT Sans' sans-serif;
-    margin: 6px 3px;
-    padding: 8px 12px;
-  }
-
-  kbd.space {
-    width: 6em;
-    min-height: 1em;
-  }
-
-  kbd.pressed {
-    -webkit-box-shadow: none;
-    box-shadow: none;
-
-    background: gray;
-
-    position: relative;
-    top: 0.2em;
-  }
-
-  p {
-    font-family: 'PT Sans' sans-serif;
-  }
-
-  footer p {
-    font-size: 12px;
-    color: white;
-  }
-
-  span#arrow {
-    position: absolute;
-    top: 8px;
-    right: 1em;
-
-    color: white;
-    font-size: 10em;
-  }
-
-  .hidden {
-    display: none;
-  }
-</style>
+<link href='css/keys.css' rel='stylesheet' type='text/css'>
+<link href='css/tooltips.css' rel='stylesheet' type='text/css'>
+<link href='css/animations.css' rel='stylesheet' type='text/css'>
+<link href='css/styles.css' rel='stylesheet' type='text/css'>
 
 <span id="arrow" class="hidden"> &uarr; </span>
+<div class="social">
+  <!-- Github -->
+  <iframe src="http://ghbtns.com/github-btn.html?user=creatorrr&repo=browser-bricks&type=watch&count=true"
+    allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe>
+
+  <!-- Facebook -->
+  <div id="fb-root"></div>
+  <script>(function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));</script>
+
+  <div class="fb-share-button" data-href="http://diwank.name/browser-bricks/" data-type="button_count"></div>
+
+  <!-- Twitter -->
+  <a href="https://twitter.com/share" class="twitter-share-button" data-text="Try browser bricks!" data-via="diwanksingh">Tweet</a>
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+</div>
 
 <div id="container" class="animated delay fadeInDown">
   <header>
@@ -379,14 +38,15 @@
 
   <article class="light-keys">
     <div>
-      <kbd id="k27" title="Quit"> Esc </kbd>
-      <kbd id="k80" title="Play" class="animated delay repeat glow"> P </kbd>
+      <kbd id="k27" class="tooltip-top shown" data-title="End"> Esc </kbd>
+      <kbd id="k80" class="tooltip-top shown animated delay repeat glow" data-title="Play"> P </kbd>
+      <kbd id="k191" class="tooltip-top shown" data-title="Help"> ? </kbd>
     </div>
 
     <div>
-      <kbd id="k37" title="Left"> &larr; </kbd>
-      <kbd id="k32" class="space" title="Pause / Resume"> &nbsp; </kbd>
-      <kbd id="k39" title="Right"> &rarr; </kbd>
+      <kbd id="k37" class="tooltip-bottom shown" data-title="Left"> &larr; </kbd>
+      <kbd id="k32" class="tooltip-bottom shown space" data-title="Pause / Resume"> &nbsp; </kbd>
+      <kbd id="k39" class="tooltip-bottom shown" data-title="Right"> &rarr; </kbd>
     </div>
   </article>
 
