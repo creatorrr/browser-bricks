@@ -1280,11 +1280,10 @@
       this.on('state:change', function(__, next) {
         if (next === 'won' || next === 'lost') {
           _this._playSound(next);
-        }
-        if (next === 'won') {
           return _.wait(400, function() {
-            if (window.confirm('Great job! Play again?')) {
-              return _this.stop().display();
+            _this.stop();
+            if (window.confirm("You " + next + "! Play again?")) {
+              return _this.display();
             }
           });
         }

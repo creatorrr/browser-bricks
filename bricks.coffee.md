@@ -1138,11 +1138,13 @@ Class Game (StateMachine)
         @on 'bounce:paddle', _.bind @_playSound, this, 'paddle'
 
         @on 'state:change', (__, next) =>
-          @_playSound next if next in ['won', 'lost']
+          if next in ['won', 'lost']
+            @_playSound next
 
-          # Prompt for rematch
-          if next is 'won'
-            _.wait 400, => @stop().display() if window.confirm 'Great job! Play again?'
+            # Prompt for rematch
+            _.wait 400, =>
+              @stop()
+              @display() if window.confirm "You #{ next }! Play again?"
 
       # Show
       show: ->
