@@ -311,7 +311,57 @@
           return Math.sqrt((_.sqr(x - x2)) + (_.sqr(y - y2)));
         }
       };
-    }
+    },
+    onKeyEvent: (function() {
+      var _fn, _timers;
+      _fn = {};
+      _timers = {};
+      return function(w, fn) {
+        var _name;
+        _fn[w.name] = fn;
+        _timers[_name = w.name] || (_timers[_name] = {});
+        w.onkeydown || (w.onkeydown = function(e) {
+          var keyCode, timers;
+          fn = _fn[this.name];
+          timers = _timers[this.name];
+          keyCode = e.keyCode;
+          if (timers[keyCode] == null) {
+            clearInterval(timers[keyCode]);
+            if (typeof fn === "function") {
+              fn('key:down', e);
+            }
+            timers[keyCode] = setInterval(_.bind(fn, null, 'key:down', e), DRAW_INTERVAL);
+          }
+          return true;
+        });
+        w.onkeyup || (w.onkeyup = function(e) {
+          var keyCode, timers;
+          fn = _fn[this.name];
+          timers = _timers[this.name];
+          keyCode = e.keyCode;
+          if (typeof fn === "function") {
+            fn('key:up', e);
+          }
+          if (timers[keyCode] != null) {
+            clearInterval(timers[keyCode]);
+          }
+          timers[keyCode] = null;
+          return true;
+        });
+        return w.onblur || (w.onblur = function() {
+          var k, timers, v;
+          timers = _timers[this.name];
+          for (k in timers) {
+            v = timers[k];
+            if (v != null) {
+              clearInterval(v);
+            }
+          }
+          timers = {};
+          return true;
+        });
+      };
+    })()
   };
 
   Events = (function() {
@@ -1221,7 +1271,7 @@
           }
         }
       ]);
-      this.on('key:pressed', this._controlGame);
+      this.on('key:down', this._controlGame);
       this.on('state:change', this._loop);
       this.on('bounce:brick', this._incDifficulty);
       this.on('bounce:brick', _.bind(this._playSound, this, 'brick'));
@@ -1242,7 +1292,7 @@
     }
 
     Game.prototype.show = function() {
-      var down, name, up, _ref2, _ref3, _window,
+      var handler, name, _ref2, _window,
         _this = this;
       this._grid.show();
       _.defer(function() {
@@ -1264,68 +1314,41 @@
           }
         }
       });
-      down = _.throttle(DRAW_INTERVAL, function(e) {
-        return _this.trigger('key:pressed', e);
+      handler = _.throttle(DRAW_INTERVAL, function(type, e) {
+        return _this.trigger(type, e);
       });
-      up = function(e) {
-        return _this.trigger('key:up', e);
-      };
       _ref2 = this._grid.elements;
       for (name in _ref2) {
         _window = _ref2[name]._window;
-        if (name === 'ball' || name === 'paddle') {
-          if (_window != null) {
-            _window.onkeydown || (_window.onkeydown = down);
-          }
+        if ((_window != null) && (name === 'ball' || name === 'paddle')) {
+          _.onKeyEvent(_window, handler);
         }
       }
       this._grid.elements.bricks.map(function(brick) {
-        var _ref3;
-        return brick != null ? (_ref3 = brick._window) != null ? _ref3.onkeydown || (_ref3.onkeydown = down) : void 0 : void 0;
-      });
-      _ref3 = this._grid.elements;
-      for (name in _ref3) {
-        _window = _ref3[name]._window;
-        if (name === 'ball' || name === 'paddle') {
-          if (_window != null) {
-            _window.onkeyup || (_window.onkeyup = up);
-          }
+        var w;
+        w = brick != null ? brick._window : void 0;
+        if (w != null) {
+          return _.onKeyEvent(w, handler);
         }
-      }
-      this._grid.elements.bricks.map(function(brick) {
-        var _ref4;
-        return brick != null ? (_ref4 = brick._window) != null ? _ref4.onkeyup || (_ref4.onkeyup = up) : void 0 : void 0;
       });
       return this;
     };
 
     Game.prototype.hide = function() {
-      var name, _ref2, _ref3, _window;
+      var name, _ref2, _window;
       _ref2 = this._grid.elements;
       for (name in _ref2) {
         _window = _ref2[name]._window;
-        if (name === 'ball' || name === 'paddle') {
-          if (_window != null) {
-            _window.onkeydown = null;
-          }
+        if ((_window != null) && (name === 'ball' || name === 'paddle')) {
+          _.onKeyEvent(_window, null);
         }
       }
       this._grid.elements.bricks.map(function(brick) {
-        var _ref3;
-        return brick != null ? (_ref3 = brick._window) != null ? _ref3.onkeydown = null : void 0 : void 0;
-      });
-      _ref3 = this._grid.elements;
-      for (name in _ref3) {
-        _window = _ref3[name]._window;
-        if (name === 'ball' || name === 'paddle') {
-          if (_window != null) {
-            _window.onkeyup = null;
-          }
+        var w;
+        w = brick != null ? brick._window : void 0;
+        if (w != null) {
+          return _.onKeyEvent(w, null);
         }
-      }
-      this._grid.elements.bricks.map(function(brick) {
-        var _ref4;
-        return brick != null ? (_ref4 = brick._window) != null ? _ref4.onkeyup = null : void 0 : void 0;
       });
       this._grid.hide();
       return this;
@@ -1346,27 +1369,23 @@
   init = function() {
     var game;
     window.game = game = new Game;
-    window.onkeydown = _.throttle(DRAW_INTERVAL, function(e) {
-      return game.trigger('key:pressed', e);
-    });
-    window.onkeyup = function(e) {
-      return game.trigger('key:up', e);
-    };
-    game.on('key:pressed', function(_arg) {
+    _.onKeyEvent(window, _.throttle(DRAW_INTERVAL, function(type, e) {
+      return game.trigger(type, e);
+    }));
+    game.on('key:down', function(_arg) {
       var k, keyCode;
       keyCode = _arg.keyCode;
       if (k = $("#k" + keyCode)) {
         return k.classList.add('pressed');
       }
     });
-    game.on('key:up', function(_arg) {
-      var e, keyCode, _i, _len, _ref2, _results;
-      keyCode = _arg.keyCode;
+    game.on('key:up', function() {
+      var k, _i, _len, _ref2, _results;
       _ref2 = $$('kbd');
       _results = [];
       for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-        e = _ref2[_i];
-        _results.push(e.classList.remove('pressed'));
+        k = _ref2[_i];
+        _results.push(k.classList.remove('pressed'));
       }
       return _results;
     });

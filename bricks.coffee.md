@@ -242,6 +242,50 @@ Now, lets define some helper functions for the application.
         dist: ([x2, y2]) ->
           Math.sqrt (_.sqr x - x2) + (_.sqr y - y2)
 
+      # Shim onkeydown to avoid key repeat delay
+      onKeyEvent: do ->
+        _fn = {}
+        _timers = {}
+
+        (w, fn) ->
+          _fn[w.name] = fn
+          _timers[w.name] or= {}
+
+          w.onkeydown or= (e) ->
+            fn = _fn[@name]
+            timers = _timers[@name]
+            {keyCode} = e
+
+            unless timers[keyCode]?
+              clearInterval timers[keyCode]
+              fn? 'key:down', e
+
+              timers[keyCode] = setInterval (_.bind fn, null, 'key:down', e), DRAW_INTERVAL
+
+            true
+
+          w.onkeyup or= (e) ->
+            fn = _fn[@name]
+            timers = _timers[@name]
+            {keyCode} = e
+
+            fn? 'key:up', e
+
+            clearInterval timers[keyCode] if timers[keyCode]?
+            timers[keyCode] = null
+
+            true
+
+          w.onblur or= ->
+            timers = _timers[@name]
+
+            for k, v of timers when v?
+              clearInterval v
+
+            timers = {}
+            true
+
+
 Class: Events
 -------------
 
@@ -1080,7 +1124,7 @@ Class Game (StateMachine)
         ]
 
         # Init game controls
-        @on 'key:pressed', @_controlGame
+        @on 'key:down', @_controlGame
 
         # Run game cycle on state change
         @on 'state:change', @_loop
@@ -1119,31 +1163,26 @@ Class Game (StateMachine)
               window.location.replace url
 
         # Attach key events
-        down = _.throttle DRAW_INTERVAL, (e) =>
-          @trigger 'key:pressed', e
+        handler = _.throttle DRAW_INTERVAL, (type, e) =>
+          @trigger type, e
 
-        up = (e) =>
-          @trigger 'key:up', e
+        for name, {_window} of @_grid.elements when _window? and name in ['ball', 'paddle']
+          _.onKeyEvent _window, handler
 
-        _window?.onkeydown or= down for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map (brick) ->
-          brick?._window?.onkeydown or= down
-
-        _window?.onkeyup or= up for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
-        @_grid.elements.bricks.map (brick) ->
-          brick?._window?.onkeyup or= up
+          w = brick?._window
+          _.onKeyEvent w, handler if w?
 
         this
 
       hide: ->
         # Detach key events
-        _window?.onkeydown = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
-        @_grid.elements.bricks.map (brick) ->
-          brick?._window?.onkeydown = null
+        for name, {_window} of @_grid.elements when _window? and name in ['ball', 'paddle']
+          _.onKeyEvent _window, null
 
-        _window?.onkeyup = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map (brick) ->
-          brick?._window?.onkeyup = null
+          w = brick?._window
+          _.onKeyEvent w, null if w?
 
         @_grid.hide()
         this
@@ -1161,21 +1200,19 @@ Set things up and start game.
       window.game = game = new Game
 
       # Attach keydown event
-      window.onkeydown = _.throttle DRAW_INTERVAL, (e) ->
-        game.trigger 'key:pressed', e
-
-      window.onkeyup = (e) ->
-        game.trigger 'key:up', e
+      _.onKeyEvent window, _.throttle DRAW_INTERVAL, (type, e) ->
+        game.trigger type, e
 
       # Animate onscreen keys
-      game.on 'key:pressed', ({keyCode}) ->
+      game.on 'key:down', ({keyCode}) ->
         # Display keypress
         if k = $ "#k#{ keyCode }"
           k.classList.add 'pressed'
 
-      game.on 'key:up', ({keyCode}) ->
-        # Clear previous
-        e.classList.remove 'pressed' for e in $$ 'kbd'
+      game.on 'key:up', ->
+        # Remove pressed state
+        for k in $$ 'kbd'
+          k.classList.remove 'pressed'
 
       # Manage glow
       game.on 'state:change', (__, next) ->
