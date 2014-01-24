@@ -1298,8 +1298,9 @@
       _.defer(function() {
         var url;
         if ((_this._grid != null) && !_this._grid.popupsDisplayed()) {
-          _this.stop();
+          _this.trigger('popup:blocked');
           if (window.confirm("Please enable popups before playing this game. Do you wish to be taken to your browser's corresponding support page?")) {
+            _this.stop();
             url = (function() {
               switch (BROWSER) {
                 case 'chrome':
@@ -1310,7 +1311,7 @@
                   return 'http://www.qantas.com.au/travel/airlines/how-to-enable-popups/global/en';
               }
             })();
-            return window.location.replace(url);
+            return window.location.replace(url, '_blank');
           }
         }
       });
@@ -1397,6 +1398,15 @@
       } else {
         return k.className = '';
       }
+    });
+    game.on('popup:blocked', function() {
+      var arrow;
+      arrow = $('#arrow');
+      arrow.className = 'animated delay bounce';
+      return _.wait(3 * 1000, function() {
+        game.stop();
+        return arrow.className = 'hidden';
+      });
     });
     return game.on('error', function(_arg) {
       var message;

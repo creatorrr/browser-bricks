@@ -1151,16 +1151,18 @@ Class Game (StateMachine)
         # Check for popup blocker
         _.defer =>
           if @_grid? and not @_grid.popupsDisplayed()
-            @stop()
+            @trigger 'popup:blocked'
 
             # Take user to help page
             if window.confirm "Please enable popups before playing this game. Do you wish to be taken to your browser's corresponding support page?"
+              @stop()
+
               url = switch BROWSER
                 when 'chrome' then 'https://support.google.com/chrome/answer/95472?hl=en'
                 when 'firefox' then 'https://support.mozilla.org/en-US/kb/pop-blocker-settings-exceptions-troubleshooting#w_pop-up-blocker-settings'
                 else 'http://www.qantas.com.au/travel/airlines/how-to-enable-popups/global/en'
 
-              window.location.replace url
+              window.location.replace url, '_blank'
 
         # Attach key events
         handler = _.throttle DRAW_INTERVAL, (type, e) =>
@@ -1223,6 +1225,15 @@ Set things up and start game.
 
         else
           k.className = ''
+
+      # Popup pointer
+      game.on 'popup:blocked', ->
+        arrow = $ '#arrow'
+
+        arrow.className = 'animated delay bounce'
+        _.wait 3*1000, ->
+          game.stop()
+          arrow.className = 'hidden'
 
       # Log errors
       game.on 'error', ({message}) -> console.log "Error: #{ message }"
