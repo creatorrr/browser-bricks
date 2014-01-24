@@ -66,7 +66,21 @@ Browser type:
 Helper Functions
 ----------------
 
-First, lets define some helper functions for the application.
+Shims.
+
+    unless window.Set
+      class window.Set extends Array
+        constructor: -> super
+        add: (e) -> @push e unless @has e
+        has: (e) -> e in this
+        clear: -> @pop() for i in [0...@size()]
+        delete: (e) ->
+          found = @indexOf e
+          @splice found, 1 unless found is -1
+
+        size: -> @length
+
+Now, lets define some helper functions for the application.
 
     _ =
       # Iterate N times
@@ -228,6 +242,50 @@ First, lets define some helper functions for the application.
         dist: ([x2, y2]) ->
           Math.sqrt (_.sqr x - x2) + (_.sqr y - y2)
 
+      # Shim onkeydown to avoid key repeat delay
+      onKeyEvent: do ->
+        _fn = {}
+        _timers = {}
+
+        (w, fn) ->
+          _fn[w.name] = fn
+          _timers[w.name] or= {}
+
+          w.onkeydown or= (e) ->
+            fn = _fn[@name]
+            timers = _timers[@name]
+            {keyCode} = e
+
+            unless timers[keyCode]?
+              clearInterval timers[keyCode]
+              fn? 'key:down', e
+
+              timers[keyCode] = setInterval (_.bind fn, null, 'key:down', e), DRAW_INTERVAL
+
+            true
+
+          w.onkeyup or= (e) ->
+            fn = _fn[@name]
+            timers = _timers[@name]
+            {keyCode} = e
+
+            fn? 'key:up', e
+
+            clearInterval timers[keyCode] if timers[keyCode]?
+            timers[keyCode] = null
+
+            true
+
+          w.onblur or= ->
+            timers = _timers[@name]
+
+            for k, v of timers when v?
+              clearInterval v
+
+            timers = {}
+            true
+
+
 Class: Events
 -------------
 
@@ -245,7 +303,7 @@ Here is a simple class for managing events on objects.
 
       # Remove event
       off: (name) ->
-        delete @_events[name]
+        @_events[name] = null
         this
 
       # Trigger event handlers
@@ -1066,7 +1124,7 @@ Class Game (StateMachine)
         ]
 
         # Init game controls
-        @on 'key:pressed', @_controlGame
+        @on 'key:down', @_controlGame
 
         # Run game cycle on state change
         @on 'state:change', @_loop
@@ -1080,11 +1138,13 @@ Class Game (StateMachine)
         @on 'bounce:paddle', _.bind @_playSound, this, 'paddle'
 
         @on 'state:change', (__, next) =>
-          @_playSound next if next in ['won', 'lost']
+          if next in ['won', 'lost']
+            @_playSound next
 
-          # Prompt for rematch
-          if next is 'won'
-            _.wait 400, => @stop().display() if window.confirm 'Great job! Play again?'
+            # Prompt for rematch
+            _.wait 400, =>
+              @stop()
+              @display() if window.confirm "You #{ next }! Play again?"
 
       # Show
       show: ->
@@ -1093,43 +1153,40 @@ Class Game (StateMachine)
         # Check for popup blocker
         _.defer =>
           if @_grid? and not @_grid.popupsDisplayed()
-            @stop()
+            @trigger 'popup:blocked'
 
             # Take user to help page
             if window.confirm "Please enable popups before playing this game. Do you wish to be taken to your browser's corresponding support page?"
+              @stop()
+
               url = switch BROWSER
                 when 'chrome' then 'https://support.google.com/chrome/answer/95472?hl=en'
                 when 'firefox' then 'https://support.mozilla.org/en-US/kb/pop-blocker-settings-exceptions-troubleshooting#w_pop-up-blocker-settings'
                 else 'http://www.qantas.com.au/travel/airlines/how-to-enable-popups/global/en'
 
-              window.location.replace url
+              window.location.replace url, '_blank'
 
         # Attach key events
-        down = _.throttle DRAW_INTERVAL, (e) =>
-          @trigger 'key:pressed', e
+        handler = _.throttle DRAW_INTERVAL, (type, e) =>
+          @trigger type, e
 
-        up = (e) =>
-          @trigger 'key:up', e
+        for name, {_window} of @_grid.elements when _window? and name in ['ball', 'paddle']
+          _.onKeyEvent _window, handler
 
-        _window?.onkeydown or= down for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map (brick) ->
-          brick?._window?.onkeydown or= down
-
-        _window?.onkeyup or= up for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
-        @_grid.elements.bricks.map (brick) ->
-          brick?._window?.onkeyup or= up
+          w = brick?._window
+          _.onKeyEvent w, handler if w?
 
         this
 
       hide: ->
         # Detach key events
-        _window?.onkeydown = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
-        @_grid.elements.bricks.map (brick) ->
-          brick?._window?.onkeydown = null
+        for name, {_window} of @_grid.elements when _window? and name in ['ball', 'paddle']
+          _.onKeyEvent _window, null
 
-        _window?.onkeyup = null for name, {_window} of @_grid.elements when name in ['ball', 'paddle']
         @_grid.elements.bricks.map (brick) ->
-          brick?._window?.onkeyup = null
+          w = brick?._window
+          _.onKeyEvent w, null if w?
 
         @_grid.hide()
         this
@@ -1147,21 +1204,19 @@ Set things up and start game.
       window.game = game = new Game
 
       # Attach keydown event
-      window.onkeydown = _.throttle DRAW_INTERVAL, (e) ->
-        game.trigger 'key:pressed', e
-
-      window.onkeyup = (e) ->
-        game.trigger 'key:up', e
+      _.onKeyEvent window, _.throttle DRAW_INTERVAL, (type, e) ->
+        game.trigger type, e
 
       # Animate onscreen keys
-      game.on 'key:pressed', ({keyCode}) ->
+      game.on 'key:down', ({keyCode}) ->
         # Display keypress
         if k = $ "#k#{ keyCode }"
           k.classList.add 'pressed'
 
-      game.on 'key:up', ({keyCode}) ->
-        # Clear previous
-        e.classList.remove 'pressed' for e in $$ 'kbd'
+      game.on 'key:up', ->
+        # Remove pressed state
+        for k in $$ 'kbd'
+          k.classList.remove 'pressed'
 
       # Manage glow
       game.on 'state:change', (__, next) ->
@@ -1172,6 +1227,15 @@ Set things up and start game.
 
         else
           k.className = ''
+
+      # Popup pointer
+      game.on 'popup:blocked', ->
+        arrow = $ '#arrow'
+
+        arrow.className = 'animated delay bounce'
+        _.wait 3*1000, ->
+          game.stop()
+          arrow.className = 'hidden'
 
       # Log errors
       game.on 'error', ({message}) -> console.log "Error: #{ message }"
