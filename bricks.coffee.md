@@ -66,7 +66,21 @@ Browser type:
 Helper Functions
 ----------------
 
-First, lets define some helper functions for the application.
+Shims.
+
+    unless window.Set
+      class window.Set extends Array
+        constructor: -> super
+        add: (e) -> @push e unless @has e
+        has: (e) -> e in this
+        clear: -> @pop() for i in [0...@size()]
+        delete: (e) ->
+          found = @indexOf e
+          @splice found, 1 unless found is -1
+
+        size: -> @length
+
+Now, lets define some helper functions for the application.
 
     _ =
       # Iterate N times
@@ -245,7 +259,7 @@ Here is a simple class for managing events on objects.
 
       # Remove event
       off: (name) ->
-        delete @_events[name]
+        @_events[name] = null
         this
 
       # Trigger event handlers
