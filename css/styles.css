@@ -72,6 +72,21 @@ span#arrow {
   font-size: 10em;
 }
 
+.social {
+  position: fixed;
+  top: 2em;
+  right: 2em;
+}
+
+.social iframe {
+  margin-bottom: 4px;
+}
+
+.social .fb-share-button {
+  display: block;
+  margin-bottom: 8px;
+}
+
 .hidden {
   display: none;
 }
