@@ -330,7 +330,9 @@
             if (typeof fn === "function") {
               fn('key:down', e);
             }
-            timers[keyCode] = setInterval(_.bind(fn, null, 'key:down', e), DRAW_INTERVAL);
+            timers[keyCode] = setInterval((function() {
+              return typeof fn === "function" ? fn('key:down', e) : void 0;
+            }), DRAW_INTERVAL);
           }
           return true;
         });
@@ -1154,7 +1156,7 @@
     };
 
     Game.prototype._controlGame = function(key) {
-      var paddle, state, _ref2, _ref3;
+      var b, h, paddle, state, w, _ref2, _ref3;
       state = this._getState();
       switch (key.keyCode) {
         case 32:
@@ -1193,6 +1195,17 @@
               return this.start();
           }
           break;
+        case 191:
+          h = window.screen.availHeight;
+          w = window.screen.availWidth;
+          b = new Box({
+            height: h * 2 / 3,
+            width: w / 4,
+            top: h / 6,
+            left: w * 3 / 8
+          });
+          b._url = 'help.html';
+          return b.show();
         default:
           return this.trigger('error', new Error('Invalid control'));
       }
@@ -1210,8 +1223,7 @@
           break;
         case 'idle':
         case 'won':
-          this.hide();
-          return this._grid = null;
+          return this.hide();
         case 'lost':
           ball = this._grid.elements.ball;
           ball.hide();
@@ -1336,6 +1348,9 @@
 
     Game.prototype.hide = function() {
       var name, _ref2, _window;
+      if (this._grid == null) {
+        return;
+      }
       _ref2 = this._grid.elements;
       for (name in _ref2) {
         _window = _ref2[name]._window;
@@ -1351,7 +1366,34 @@
         }
       });
       this._grid.hide();
+      this._grid = null;
       return this;
+    };
+
+    Game.prototype.cheat = function() {
+      var brick, bricks, i, j, row, _i, _len, _results;
+      bricks = this._grid.elements.bricks;
+      _results = [];
+      for (i = _i = 0, _len = bricks.length; _i < _len; i = ++_i) {
+        row = bricks[i];
+        _results.push((function() {
+          var _j, _len1, _results1;
+          _results1 = [];
+          for (j = _j = 0, _len1 = row.length; _j < _len1; j = ++_j) {
+            brick = row[j];
+            if (i + j) {
+              if (brick != null) {
+                brick.hide();
+              }
+              _results1.push(this._grid.elements.bricks[i][j] = null);
+            } else {
+              _results1.push(void 0);
+            }
+          }
+          return _results1;
+        }).call(this));
+      }
+      return _results;
     };
 
     return Game;
