@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<title>Bricks</title>
+
+<link href='http://fonts.googleapis.com/css?family=PT+Sans|Monofett' rel='stylesheet' type='text/css'>
+
+<link href='css/keys.css' rel='stylesheet' type='text/css'>
+<link href='css/tooltips.css' rel='stylesheet' type='text/css'>
+<link href='css/animations.css' rel='stylesheet' type='text/css'>
+<link href='css/styles.css' rel='stylesheet' type='text/css'>
+
+<style>
+  body {
+    background: transparent;
+  }
+
+  #container {
+    top: 0;
+    text-align: left;
+
+    padding: 1em 3em;
+  }
+
+  #container * {
+    line-height: 1.5;
+    color: black;
+  }
+
+  h1, h2 {
+    font-family: 'PT Sans' sans-serif;
+    margin-bottom: 0.2em;
+  }
+
+  header {
+    margin-bottom: 1em;
+  }
+
+  header h1 {
+    font-size: 36px;
+    font-weight: normal;
+  }
+
+  header h2 {
+    font-size: 24px;
+  }
+
+  article h1,
+  article p {
+    font-size: 16px;
+  }
+
+  footer {
+    top: 0;
+    margin: 4em auto;
+    border-top: 1px dotted darkgray;
+  }
+
+  footer p {
+    margin: 2em 0;
+    color: darkgray !important;
+    text-align: center;
+  }
+
+</style>
+
+<div id="container" class="animated fadeInDown">
+  <header>
+    <h1> Browser <em> Bricks </em> </h1>
+  </header>
+
+  <article>
+    <h1> About. </h1>
+    <p> Browser Bricks is a browser rendition of the famous
+    <a href="http://en.wikipedia.org/wiki/Breakout_(video_game)"> Breakout </a> game -- with a twist.
+    Instead of the regular canvas, it's played using
+    a collection of browser windows acting as bricks, paddle and ball.
+    The empty space between windows becomes the playing field for the game! </p>
+
+    <h1> Tribute to Browser Pong. </h1>
+    <p>
+    A departure from the typical browser gaming experience,
+    this game was inspired by <a href="http://stewd.io/pong/"> Browser Pong </a>.
+    In fact, it started life as a <a href="https://github.com/creatorrr/browser-bricks/blob/master/bricks.coffee.md"> response </a>
+    to <a href="http://stewd.io/pong/lib/pong.js"> Stewart's letter-to-the-source-code-reader </a> in the game source. </p>
+
+    <p> This game celebrates the spirit of openness that the web as a platform proliferates.
+    Simplicity and openness were key goals of the project.
+    The source code is (hopefully) very readable and doesn't use any external libraries.
+    So hit <em> View Source </em> and take a look at the innards! </p>
+
+    <p> The entire codebase was released under the permissive <a href="http://diwank.name/browser-bricks/LICENSE.md"> MIT license </a>.
+    So you're free to reuse or remix any part of the project. </p>
+
+    <h1> An experiment. </h1>
+    <p> Let me make this extremely clear, this game is an experiment.
+    It is a prototype at best so please forgive me for any rough edges.
+    However, do feel free to <a href="mailto:singh@diwank.name"> shoot me an email </a> or
+    open a <a href="http://github.com/creatorrr/browser-bricks/issues"> Github issue </a>
+    if you find any bugs or have any feedback. </p>
+
+    <h1> Note on compatibility. </h1>
+    <p> Given the vast inconsistencies in the way browsers deal with popups,
+    there are numerous glitches on different platforms.
+    In fact, this doesn't seem to work on Firefox at all.
+    For now, it has only been tested on the latest version (v32+) of Chrome.</p>
+
+    <p> Note to self: test other browsers and find a hacky way to make it work in firefox. </p>
+  </article>
+
+  <footer>
+    <p> &copy; 2013-2014 Diwank Singh Tomer </p>
+  </footer>
+</div>
