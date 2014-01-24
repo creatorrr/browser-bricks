@@ -246,6 +246,7 @@ Now, lets define some helper functions for the application.
       onKeyEvent: do ->
         _fn = {}
         _timers = {}
+        _repeaters = [37, 39]
 
         (w, fn) ->
           _fn[w.name] = fn
@@ -257,10 +258,10 @@ Now, lets define some helper functions for the application.
             {keyCode} = e
 
             unless timers[keyCode]?
-              clearInterval timers[keyCode]
               fn? 'key:down', e
 
-              timers[keyCode] = setInterval (-> fn? 'key:down', e), DRAW_INTERVAL
+              if keyCode in _repeaters
+                timers[keyCode] = setInterval (-> fn? 'key:down', e), DRAW_INTERVAL
 
             true
 

@@ -313,9 +313,10 @@
       };
     },
     onKeyEvent: (function() {
-      var _fn, _timers;
+      var _fn, _repeaters, _timers;
       _fn = {};
       _timers = {};
+      _repeaters = [37, 39];
       return function(w, fn) {
         var _name;
         _fn[w.name] = fn;
@@ -326,13 +327,14 @@
           timers = _timers[this.name];
           keyCode = e.keyCode;
           if (timers[keyCode] == null) {
-            clearInterval(timers[keyCode]);
             if (typeof fn === "function") {
               fn('key:down', e);
             }
-            timers[keyCode] = setInterval((function() {
-              return typeof fn === "function" ? fn('key:down', e) : void 0;
-            }), DRAW_INTERVAL);
+            if (__indexOf.call(_repeaters, keyCode) >= 0) {
+              timers[keyCode] = setInterval((function() {
+                return typeof fn === "function" ? fn('key:down', e) : void 0;
+              }), DRAW_INTERVAL);
+            }
           }
           return true;
         });
