@@ -1217,16 +1217,19 @@ Set things up and start game.
         # Remove pressed state
         for k in $$ 'kbd'
           k.classList.remove 'pressed'
+          k.classList.remove 'shown'
 
       # Manage glow
       game.on 'state:change', (__, next) ->
         k = $ '#k80'
+        original = _.once -> k.className
+        classes = 'animated delay repeat glow'.split ' '
 
         if next is 'idle'
-          k.className = 'animated delay repeat glow'
+          k.classList.add cls for cls in classes
 
         else
-          k.className = ''
+          k.classList.remove cls for cls in classes
 
       # Popup pointer
       game.on 'popup:blocked', ->

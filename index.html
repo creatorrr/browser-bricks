@@ -37,8 +37,105 @@
     box-shadow: inset 0 0 1px rgb(255, 255, 255), inset 0 0 .4em rgb(200, 200, 200), 0 .2em 0 rgb(130, 130, 130), 0 .2em 0 rgba(0, 0, 0, .4), 0 .2em .2em rgba(0, 0, 0, .9);
   }
 
-  kbd[title], .key[title] {
+  kbd[title], kbd[data-title], .key[title], .key[data-title] {
     cursor: help;
+  }
+
+</style>
+
+<style>
+  [class^="tooltip-"] {
+    position: relative;
+    display: inline-block;
+  }
+
+  [class^="tooltip-"]:before, [class^="tooltip-"]:after {
+    position: absolute;
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+
+    visibility: hidden;
+    opacity: 0;
+    z-index: 10;
+    pointer-events: none;
+
+    -webkit-transition: 0.3s ease;
+    -moz-transition: 0.3s ease;
+    transition: 0.3s ease;
+  }
+
+  [class^="tooltip-"]:hover:before, [class^="tooltip-"]:hover:after, [class^="tooltip-"]:focus:before, [class^="tooltip-"]:focus:after,
+  [class^="tooltip-"].shown:after, [class^="tooltip-"].shown:before {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  [class^="tooltip-"]:before {
+    content: '';
+    position: absolute;
+    background: transparent;
+    border: 6px solid transparent;
+    z-index: 11;
+  }
+
+  [class^="tooltip-"]:after {
+    content: attr(data-title);
+    background: rgba(60, 120, 60, 0.8);
+    color: white;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 12px;
+    white-space: nowrap;
+    border-radius: 2px;
+  }
+
+  .tooltip-top:before {
+    border-top-color: rgba(60, 120, 60, 0.8);
+white}
+
+  .tooltip-bottom:before {
+    border-bottom-color: rgba(60, 120, 60, 0.8);
+white}
+
+  .tooltip-top:before {
+    margin-bottom: -12px;
+  }
+
+  .tooltip-top:after {
+    margin-left: -18px;
+  }
+
+  .tooltip-top:before, .tooltip-top:after {
+    bottom: 100%;
+    left: 50%;
+  }
+
+  .tooltip-top:hover:after, .tooltip-top:hover:before, .tooltip-top:focus:after, .tooltip-top:focus:before,
+  .tooltip-top.shown:after, .tooltip-top.shown:before {
+    -webkit-transform: translateY(-8px);
+    -moz-transform: translateY(-8px);
+    transform: translateY(-8px);
+  }
+
+  .tooltip-bottom:before {
+    margin-top: -12px;
+  }
+
+  .tooltip-bottom:after {
+    margin-left: -18px;
+  }
+
+  .tooltip-bottom:before, .tooltip-bottom:after {
+    top: 100%;
+    left: 50%;
+  }
+
+  .tooltip-bottom:hover:after, .tooltip-bottom:hover:before, .tooltip-bottom:focus:after, .tooltip-bottom:focus:before,
+  .tooltip-bottom.shown:after, .tooltip-bottom.shown:before {
+    -webkit-transform: translateY(8px);
+    -moz-transform: translateY(8px);
+    transform: translateY(8px);
   }
 
 </style>
@@ -352,6 +449,9 @@
   }
 
   footer p {
+    position: relative;
+    top: 2em;
+
     font-size: 12px;
     color: white;
   }
@@ -379,14 +479,14 @@
 
   <article class="light-keys">
     <div>
-      <kbd id="k27" title="Quit"> Esc </kbd>
-      <kbd id="k80" title="Play" class="animated delay repeat glow"> P </kbd>
+      <kbd id="k27" class="tooltip-top shown" data-title="End"> Esc </kbd>
+      <kbd id="k80" class="tooltip-top shown" data-title="Play" class="animated delay repeat glow"> P </kbd>
     </div>
 
     <div>
-      <kbd id="k37" title="Left"> &larr; </kbd>
-      <kbd id="k32" class="space" title="Pause / Resume"> &nbsp; </kbd>
-      <kbd id="k39" title="Right"> &rarr; </kbd>
+      <kbd id="k37" class="tooltip-bottom shown" data-title="Left"> &larr; </kbd>
+      <kbd id="k32" class="tooltip-bottom shown space" data-title="Pause / Resume"> &nbsp; </kbd>
+      <kbd id="k39" class="tooltip-bottom shown" data-title="Right"> &rarr; </kbd>
     </div>
   </article>
 

@@ -1385,17 +1385,32 @@
       _results = [];
       for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
         k = _ref2[_i];
-        _results.push(k.classList.remove('pressed'));
+        k.classList.remove('pressed');
+        _results.push(k.classList.remove('shown'));
       }
       return _results;
     });
     game.on('state:change', function(__, next) {
-      var k;
+      var classes, cls, k, original, _i, _j, _len, _len1, _results, _results1;
       k = $('#k80');
+      original = _.once(function() {
+        return k.className;
+      });
+      classes = 'animated delay repeat glow'.split(' ');
       if (next === 'idle') {
-        return k.className = 'animated delay repeat glow';
+        _results = [];
+        for (_i = 0, _len = classes.length; _i < _len; _i++) {
+          cls = classes[_i];
+          _results.push(k.classList.add(cls));
+        }
+        return _results;
       } else {
-        return k.className = '';
+        _results1 = [];
+        for (_j = 0, _len1 = classes.length; _j < _len1; _j++) {
+          cls = classes[_j];
+          _results1.push(k.classList.remove(cls));
+        }
+        return _results1;
       }
     });
     game.on('popup:blocked', function() {
